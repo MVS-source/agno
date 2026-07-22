@@ -3642,7 +3642,7 @@ def _continue_run(
                 **kwargs,
             )
             deque(pre_hook_iterator, maxlen=0)
-        except InputCheckError as e:
+        except (InputCheckError, OutputCheckError) as e:
             run_response = cast(RunOutput, run_response)
             run_response.status = RunStatus.error
             flush_in_flight_messages_on_error(run_response, locals().get("run_messages"))
