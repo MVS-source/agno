@@ -1,3 +1,4 @@
+import json
 from os import getenv
 from typing import Any, List, Literal, Optional
 
@@ -16,8 +17,7 @@ class LinkupTools(Toolkit):
         api_key: Optional[str] = None,
         depth: Literal["standard", "deep"] = "standard",
         output_type: Literal["sourcedAnswer", "searchResults"] = "searchResults",
-        enable_web_search_with_linkup: bool = True,
-        all: bool = False,
+        web_search_with_linkup: bool = True,
         **kwargs,
     ):
         self.api_key = api_key or getenv("LINKUP_API_KEY")
@@ -29,7 +29,7 @@ class LinkupTools(Toolkit):
         self.output_type = output_type
 
         tools: List[Any] = []
-        if all or enable_web_search_with_linkup:
+        if web_search_with_linkup:
             tools.append(self.web_search_with_linkup)
 
         super().__init__(name="linkup_tools", tools=tools, **kwargs)
@@ -55,4 +55,4 @@ class LinkupTools(Toolkit):
             )
             return response
         except Exception as e:
-            return f"Error: {str(e)}"
+            return json.dumps({"error": str(e)})

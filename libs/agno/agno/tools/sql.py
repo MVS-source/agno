@@ -25,9 +25,9 @@ class SQLTools(Toolkit):
         schema: Optional[str] = None,
         dialect: Optional[str] = None,
         tables: Optional[Dict[str, Any]] = None,
-        enable_list_tables: bool = True,
-        enable_describe_table: bool = True,
-        enable_run_sql_query: bool = True,
+        list_tables: bool = True,
+        describe_table: bool = True,
+        run_sql_query: bool = True,
         all: bool = False,
         **kwargs,
     ):
@@ -54,11 +54,11 @@ class SQLTools(Toolkit):
         self.tables: Optional[Dict[str, Any]] = tables
 
         tools: List[Any] = []
-        if enable_list_tables or all:
+        if all or list_tables:
             tools.append(self.list_tables)
-        if enable_describe_table or all:
+        if all or describe_table:
             tools.append(self.describe_table)
-        if enable_run_sql_query or all:
+        if all or run_sql_query:
             tools.append(self.run_sql_query)
 
         super().__init__(name="sql_tools", tools=tools, **kwargs)
@@ -83,7 +83,7 @@ class SQLTools(Toolkit):
             return json.dumps(table_names)
         except Exception as e:
             logger.exception("Error getting tables")
-            return f"Error getting tables: {e}"
+            return json.dumps({"error": f"Error getting tables: {e}"})
 
     def describe_table(self, table_name: str) -> str:
         """Use this function to describe a table.
@@ -112,7 +112,7 @@ class SQLTools(Toolkit):
             )
         except Exception as e:
             logger.exception("Error getting table schema")
-            return f"Error getting table schema: {e}"
+            return json.dumps({"error": f"Error getting table schema: {e}"})
 
     def run_sql_query(self, query: str, limit: Optional[int] = 10) -> str:
         """Use this function to run a SQL query and return the result.
@@ -130,7 +130,7 @@ class SQLTools(Toolkit):
             return json.dumps(self.run_sql(sql=query, limit=limit), default=str)
         except Exception as e:
             logger.exception("Error running query")
-            return f"Error running query: {e}"
+            return json.dumps({"error": f"Error running query: {e}"})
 
     def run_sql(self, sql: str, limit: Optional[int] = None) -> List[dict]:
         """Internal function to run a sql query.

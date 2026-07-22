@@ -15,9 +15,8 @@ class AgentQLTools(Toolkit):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        enable_scrape_website: bool = True,
-        enable_custom_scrape_website: bool = False,
-        all: bool = False,
+        scrape_website: bool = True,
+        custom_scrape_website: bool = False,
         agentql_query: str = "",
         **kwargs,
     ):
@@ -28,9 +27,9 @@ class AgentQLTools(Toolkit):
         self.agentql_query = agentql_query
 
         tools: List[Any] = []
-        if all or enable_scrape_website:
+        if scrape_website:
             tools.append(self.scrape_website)
-        if all or enable_custom_scrape_website or (agentql_query and not all and not enable_custom_scrape_website):
+        if custom_scrape_website or (agentql_query and not custom_scrape_website):
             if agentql_query:
                 log_info("Custom AgentQL query provided. Registering custom scrape function.")
                 tools.append(self.custom_scrape_website)

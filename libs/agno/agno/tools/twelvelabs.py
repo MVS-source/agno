@@ -41,9 +41,9 @@ class TwelveLabsTools(Toolkit):
             task is processing. Default is 5.0.
         embed_timeout (float): Maximum seconds to wait for an `embed_video` task to finish before
             giving up. Default is 300.0.
-        enable_analyze_video (bool): Enable the `analyze_video` tool. Default is True.
-        enable_embed_text (bool): Enable the `embed_text` tool. Default is True.
-        enable_embed_video (bool): Enable the `embed_video` tool. Because video embedding is
+        analyze_video (bool): Enable the `analyze_video` tool. Default is True.
+        embed_text (bool): Enable the `embed_text` tool. Default is True.
+        embed_video (bool): Enable the `embed_video` tool. Because video embedding is
             long-running (it polls an async task), this is opt-in and defaults to False.
         all (bool): Enable all tools. Overrides individual flags when True. Default is False.
     """
@@ -56,9 +56,9 @@ class TwelveLabsTools(Toolkit):
         max_tokens: int = 2048,
         embed_poll_interval: float = 5.0,
         embed_timeout: float = 300.0,
-        enable_analyze_video: bool = True,
-        enable_embed_text: bool = True,
-        enable_embed_video: bool = False,
+        analyze_video: bool = True,
+        embed_text: bool = True,
+        embed_video: bool = False,
         all: bool = False,
         **kwargs,
     ):
@@ -74,11 +74,11 @@ class TwelveLabsTools(Toolkit):
         self._client: Optional[TwelveLabs] = None
 
         tools: List[Any] = []
-        if all or enable_analyze_video:
+        if all or analyze_video:
             tools.append(self.analyze_video)
-        if all or enable_embed_text:
+        if all or embed_text:
             tools.append(self.embed_text)
-        if all or enable_embed_video:
+        if all or embed_video:
             tools.append(self.embed_video)
 
         super().__init__(name="twelvelabs_tools", tools=tools, **kwargs)

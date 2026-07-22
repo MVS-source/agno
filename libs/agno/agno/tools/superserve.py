@@ -73,22 +73,22 @@ class SuperserveTools(Toolkit):
         env_vars: Optional[Dict[str, str]] = None,
         secrets: Optional[Dict[str, str]] = None,
         persistent: bool = True,
-        enable_run_python_code: bool = True,
-        enable_run_command: bool = True,
-        enable_create_file: bool = True,
-        enable_read_file: bool = True,
-        enable_list_files: bool = True,
-        enable_delete_file: bool = True,
-        enable_download_directory: bool = True,
-        enable_get_sandbox_info: bool = True,
-        enable_list_sandboxes: bool = True,
-        enable_shutdown_sandbox: bool = True,
-        enable_shutdown_sandbox_by_id: bool = True,
-        enable_get_preview_url: bool = True,
-        enable_pause_sandbox: bool = False,
-        enable_resume_sandbox: bool = False,
-        enable_attach_secret: bool = False,
-        enable_detach_secret: bool = False,
+        run_python_code: bool = True,
+        run_command: bool = True,
+        create_file: bool = True,
+        read_file: bool = True,
+        list_files: bool = True,
+        delete_file: bool = True,
+        download_directory: bool = True,
+        get_sandbox_info: bool = True,
+        list_sandboxes: bool = True,
+        shutdown_sandbox: bool = True,
+        shutdown_sandbox_by_id: bool = True,
+        get_preview_url: bool = True,
+        pause_sandbox: bool = False,
+        resume_sandbox: bool = False,
+        attach_secret: bool = False,
+        detach_secret: bool = False,
         all: bool = False,
         instructions: Optional[str] = None,
         add_instructions: bool = False,
@@ -113,22 +113,22 @@ class SuperserveTools(Toolkit):
                 proxy token; the real credential never enters the sandbox.
             persistent: Persist the sandbox id in the agent's session state so the same
                 sandbox is reused across runs (default: True).
-            enable_run_python_code: Register the run_python_code tool (default: True).
-            enable_run_command: Register the run_command tool (default: True).
-            enable_create_file: Register the create_file tool (default: True).
-            enable_read_file: Register the read_file tool (default: True).
-            enable_list_files: Register the list_files tool (default: True).
-            enable_delete_file: Register the delete_file tool (default: True).
-            enable_download_directory: Register the download_directory tool (default: True).
-            enable_get_sandbox_info: Register the get_sandbox_info tool (default: True).
-            enable_list_sandboxes: Register the list_sandboxes tool (default: True).
-            enable_shutdown_sandbox: Register the shutdown_sandbox tool (default: True).
-            enable_shutdown_sandbox_by_id: Register the shutdown_sandbox_by_id tool (default: True).
-            enable_get_preview_url: Register the get_preview_url tool (default: True).
-            enable_pause_sandbox: Register the pause_sandbox tool (default: False).
-            enable_resume_sandbox: Register the resume_sandbox tool (default: False).
-            enable_attach_secret: Register the attach_secret tool (default: False).
-            enable_detach_secret: Register the detach_secret tool (default: False).
+            run_python_code: Register the run_python_code tool (default: True).
+            run_command: Register the run_command tool (default: True).
+            create_file: Register the create_file tool (default: True).
+            read_file: Register the read_file tool (default: True).
+            list_files: Register the list_files tool (default: True).
+            delete_file: Register the delete_file tool (default: True).
+            download_directory: Register the download_directory tool (default: True).
+            get_sandbox_info: Register the get_sandbox_info tool (default: True).
+            list_sandboxes: Register the list_sandboxes tool (default: True).
+            shutdown_sandbox: Register the shutdown_sandbox tool (default: True).
+            shutdown_sandbox_by_id: Register the shutdown_sandbox_by_id tool (default: True).
+            get_preview_url: Register the get_preview_url tool (default: True).
+            pause_sandbox: Register the pause_sandbox tool (default: False).
+            resume_sandbox: Register the resume_sandbox tool (default: False).
+            attach_secret: Register the attach_secret tool (default: False).
+            detach_secret: Register the detach_secret tool (default: False).
             all: Register every tool, overriding the individual enable_* flags (default: False).
             instructions: Override the default toolkit instructions.
             add_instructions: Whether to add the instructions to the agent's system message.
@@ -158,52 +158,52 @@ class SuperserveTools(Toolkit):
 
         tools: List[Any] = []
         async_tools: List[Any] = []
-        if all or enable_run_python_code:
+        if all or run_python_code:
             tools.append(self.run_python_code)
             async_tools.append((self.arun_python_code, "run_python_code"))
-        if all or enable_run_command:
+        if all or run_command:
             tools.append(self.run_command)
             async_tools.append((self.arun_command, "run_command"))
-        if all or enable_create_file:
+        if all or create_file:
             tools.append(self.create_file)
             async_tools.append((self.acreate_file, "create_file"))
-        if all or enable_read_file:
+        if all or read_file:
             tools.append(self.read_file)
             async_tools.append((self.aread_file, "read_file"))
-        if all or enable_list_files:
+        if all or list_files:
             tools.append(self.list_files)
             async_tools.append((self.alist_files, "list_files"))
-        if all or enable_delete_file:
+        if all or delete_file:
             tools.append(self.delete_file)
             async_tools.append((self.adelete_file, "delete_file"))
-        if all or enable_download_directory:
+        if all or download_directory:
             tools.append(self.download_directory)
             async_tools.append((self.adownload_directory, "download_directory"))
-        if all or enable_get_sandbox_info:
+        if all or get_sandbox_info:
             tools.append(self.get_sandbox_info)
             async_tools.append((self.aget_sandbox_info, "get_sandbox_info"))
-        if all or enable_list_sandboxes:
+        if all or list_sandboxes:
             tools.append(self.list_sandboxes)
             async_tools.append((self.alist_sandboxes, "list_sandboxes"))
-        if all or enable_shutdown_sandbox:
+        if all or shutdown_sandbox:
             tools.append(self.shutdown_sandbox)
             async_tools.append((self.ashutdown_sandbox, "shutdown_sandbox"))
-        if all or enable_shutdown_sandbox_by_id:
+        if all or shutdown_sandbox_by_id:
             tools.append(self.shutdown_sandbox_by_id)
             async_tools.append((self.ashutdown_sandbox_by_id, "shutdown_sandbox_by_id"))
-        if all or enable_get_preview_url:
+        if all or get_preview_url:
             tools.append(self.get_preview_url)
             async_tools.append((self.aget_preview_url, "get_preview_url"))
-        if all or enable_pause_sandbox:
+        if all or pause_sandbox:
             tools.append(self.pause_sandbox)
             async_tools.append((self.apause_sandbox, "pause_sandbox"))
-        if all or enable_resume_sandbox:
+        if all or resume_sandbox:
             tools.append(self.resume_sandbox)
             async_tools.append((self.aresume_sandbox, "resume_sandbox"))
-        if all or enable_attach_secret:
+        if all or attach_secret:
             tools.append(self.attach_secret)
             async_tools.append((self.aattach_secret, "attach_secret"))
-        if all or enable_detach_secret:
+        if all or detach_secret:
             tools.append(self.detach_secret)
             async_tools.append((self.adetach_secret, "detach_secret"))
 

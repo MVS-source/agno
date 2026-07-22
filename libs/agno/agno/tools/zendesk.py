@@ -24,8 +24,7 @@ class ZendeskTools(Toolkit):
         username: Optional[str] = None,
         password: Optional[str] = None,
         company_name: Optional[str] = None,
-        enable_search_zendesk: bool = True,
-        all: bool = False,
+        search_zendesk: bool = True,
         timeout: int = 30,
         **kwargs,
     ):
@@ -37,8 +36,7 @@ class ZendeskTools(Toolkit):
         username (str): The username for Zendesk API authentication.
         password (str): The password for Zendesk API authentication.
         company_name (str): The company name to form the base URL for API requests.
-        enable_search_zendesk (bool): Whether to enable the search functionality.
-        all (bool): Enable all functions.
+        search_zendesk (bool): Whether to enable the search functionality.
         """
         self.username = username or getenv("ZENDESK_USERNAME")
         self.password = password or getenv("ZENDESK_PASSWORD")
@@ -48,7 +46,7 @@ class ZendeskTools(Toolkit):
             log_error("Username, password, or company name not provided.")
 
         tools: List[Any] = []
-        if all or enable_search_zendesk:
+        if search_zendesk:
             tools.append(self.search_zendesk)
 
         super().__init__(name="zendesk_tools", tools=tools, timeout=timeout, **kwargs)
@@ -68,7 +66,7 @@ class ZendeskTools(Toolkit):
         """
 
         if not self.username or not self.password or not self.company_name:
-            return "Username, password, or company name not provided."
+            return json.dumps({"error": "Username, password, or company name not provided."})
 
         log_debug(f"Searching Zendesk for: {search_string}")
 
@@ -79,6 +77,6 @@ class ZendeskTools(Toolkit):
             response.raise_for_status()
             clean = re.compile("<.*?>")
             articles = [re.sub(clean, "", article["body"]) for article in response.json()["results"]]
-            return json.dumps(articles)
+            return json.dumps({"articles": articles})
         except requests.RequestException as e:
-            raise ConnectionError(f"API request failed: {e}")
+            return json.dumps({"error": f"API request failed: {e}"})

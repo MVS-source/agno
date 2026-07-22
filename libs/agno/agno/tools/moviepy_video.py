@@ -33,18 +33,18 @@ class MoviePyVideoTools(Toolkit):
 
     def __init__(
         self,
-        enable_process_video: bool = True,
-        enable_generate_captions: bool = True,
-        enable_embed_captions: bool = True,
+        process_video: bool = True,
+        generate_captions: bool = True,
+        embed_captions: bool = True,
         all: bool = False,
         **kwargs,
     ):
         tools: List[Any] = []
-        if enable_process_video or all:
+        if all or process_video:
             tools.append(self.extract_audio)
-        if enable_generate_captions or all:
+        if all or generate_captions:
             tools.append(self.create_srt)
-        if enable_embed_captions or all:
+        if all or embed_captions:
             tools.append(self.embed_captions)
 
         super().__init__(name="video_tools", tools=tools, **kwargs)

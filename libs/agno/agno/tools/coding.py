@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from agno.exceptions import PathSecurityError
 from agno.tools import Toolkit
@@ -126,13 +126,13 @@ class CodingTools(Toolkit):
         max_lines: int = 2000,
         max_bytes: int = 50_000,
         shell_timeout: int = 120,
-        enable_read_file: bool = True,
-        enable_edit_file: bool = True,
-        enable_write_file: bool = True,
-        enable_run_shell: bool = True,
-        enable_grep: bool = False,
-        enable_find: bool = False,
-        enable_ls: bool = False,
+        read_file: bool = True,
+        edit_file: bool = True,
+        write_file: bool = True,
+        run_shell: bool = True,
+        grep: bool = False,
+        find: bool = False,
+        ls: bool = False,
         instructions: Optional[str] = None,
         add_instructions: bool = True,
         all: bool = False,
@@ -147,13 +147,13 @@ class CodingTools(Toolkit):
             max_lines: Maximum lines to return before truncating (default 2000).
             max_bytes: Maximum bytes to return before truncating (default 50KB).
             shell_timeout: Timeout in seconds for shell commands (default 120).
-            enable_read_file: Enable the read_file tool.
-            enable_edit_file: Enable the edit_file tool.
-            enable_write_file: Enable the write_file tool.
-            enable_run_shell: Enable the run_shell tool.
-            enable_grep: Enable the grep tool (disabled by default).
-            enable_find: Enable the find tool (disabled by default).
-            enable_ls: Enable the ls tool (disabled by default).
+            read_file: Enable the read_file tool.
+            edit_file: Enable the edit_file tool.
+            write_file: Enable the write_file tool.
+            run_shell: Enable the run_shell tool.
+            grep: Enable the grep tool (disabled by default).
+            find: Enable the find tool (disabled by default).
+            ls: Enable the ls tool (disabled by default).
             instructions: Custom instructions for the LLM. Uses defaults if None.
             add_instructions: Whether to add instructions to the agent's system message.
             all: Enable all tools regardless of individual flags.
@@ -176,19 +176,19 @@ class CodingTools(Toolkit):
 
         # Build the list of enabled tools (used for both registration and instructions)
         _enabled: List[tuple] = []
-        if all or enable_read_file:
+        if all or read_file:
             _enabled.append(("read_file", self.read_file))
-        if all or enable_edit_file:
+        if all or edit_file:
             _enabled.append(("edit_file", self.edit_file))
-        if all or enable_write_file:
+        if all or write_file:
             _enabled.append(("write_file", self.write_file))
-        if all or enable_run_shell:
+        if all or run_shell:
             _enabled.append(("run_shell", self.run_shell))
-        if all or enable_grep:
+        if all or grep:
             _enabled.append(("grep", self.grep))
-        if all or enable_find:
+        if all or find:
             _enabled.append(("find", self.find))
-        if all or enable_ls:
+        if all or ls:
             _enabled.append(("ls", self.ls))
 
         tool_names = [name for name, _ in _enabled]
@@ -250,6 +250,14 @@ class CodingTools(Toolkit):
     # Shell operators that enable command chaining or substitution
     _DANGEROUS_PATTERNS: List[str] = ["&&", "||", ";", "|", "$(", "`", ">", ">>", "<"]
 
+    # Dangerous flags that enable arbitrary code execution
+    _DANGEROUS_FLAGS: Dict[str, List[str]] = {
+        "python": ["-c", "--command"],
+        "python3": ["-c", "--command"],
+        "pip": ["--install-option", "--global-option"],
+        "pip3": ["--install-option", "--global-option"],
+    }
+
     def _check_command(self, command: str) -> Optional[str]:
         """Check if a shell command is safe to execute.
 
@@ -279,6 +287,12 @@ class CodingTools(Toolkit):
             cmd_base = Path(cmd).name  # Handle /usr/bin/python -> python
             if cmd_base not in self.allowed_commands:
                 return f"Error: Command '{cmd_base}' is not in the allowed commands list."
+
+            # Check for dangerous flags that enable arbitrary code execution
+            dangerous_flags = self._DANGEROUS_FLAGS.get(cmd_base, [])
+            for token in tokens[1:]:
+                if token in dangerous_flags:
+                    return f"Error: Flag '{token}' is not allowed for '{cmd_base}' in restricted mode."
 
         for i, token in enumerate(tokens):
             # Skip the command itself (already validated by allowlist above)

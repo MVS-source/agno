@@ -28,14 +28,15 @@ class LumaLabTools(Toolkit):
     def __init__(
         self,
         api_key: Optional[str] = None,
+        model: Literal["ray-2", "ray-flash-2"] = "ray-2",
         wait_for_completion: bool = True,
         poll_interval: int = 3,
         max_wait_time: int = 300,  # 5 minutes
-        enable_generate_video: bool = True,
-        enable_image_to_video: bool = True,
-        all: bool = False,
+        generate_video: bool = True,
+        image_to_video: bool = True,
         **kwargs,
     ):
+        self.model: Literal["ray-2", "ray-flash-2"] = model
         self.wait_for_completion = wait_for_completion
         self.poll_interval = poll_interval
         self.max_wait_time = max_wait_time
@@ -47,9 +48,9 @@ class LumaLabTools(Toolkit):
         self.client = LumaAI(auth_token=self.api_key)
 
         tools: List[Any] = []
-        if all or enable_generate_video:
+        if generate_video:
             tools.append(self.generate_video)
-        if all or enable_image_to_video:
+        if image_to_video:
             tools.append(self.image_to_video)
 
         super().__init__(name="luma_lab", tools=tools, **kwargs)
@@ -87,6 +88,7 @@ class LumaLabTools(Toolkit):
 
             # Create generation with keyframes
             generation = self.client.generations.create(
+                model=self.model,
                 prompt=prompt,
                 loop=loop,
                 aspect_ratio=aspect_ratio,
@@ -139,6 +141,7 @@ class LumaLabTools(Toolkit):
 
         try:
             generation_params: Dict[str, Any] = {
+                "model": self.model,
                 "prompt": prompt,
                 "loop": loop,
                 "aspect_ratio": aspect_ratio,

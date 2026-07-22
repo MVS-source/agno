@@ -19,11 +19,11 @@ class ExaTools(Toolkit):
     functionalities to perform categorized searches and retrieve structured results.
 
     Args:
-        enable_search (bool): Enable search functionality. Default is True.
-        enable_get_contents (bool): Enable get contents functionality. Default is True.
-        enable_find_similar (bool): Enable find similar functionality. Default is True.
-        enable_answer (bool): Enable answer generation. Default is True.
-        enable_research (bool): Enable research tool functionality. Default is False.
+        search (bool): Enable search functionality. Default is True.
+        get_contents (bool): Enable get contents functionality. Default is True.
+        find_similar (bool): Enable find similar functionality. Default is True.
+        answer (bool): Enable answer generation. Default is True.
+        research (bool): Enable research tool functionality. Default is False.
         all (bool): Enable all tools. Overrides individual flags when True. Default is False.
         text (bool): Retrieve text content from results. Default is True.
         text_length_limit (int): Max length of text content per result. Default is 1000.
@@ -44,11 +44,11 @@ class ExaTools(Toolkit):
 
     def __init__(
         self,
-        enable_search: bool = True,
-        enable_get_contents: bool = True,
-        enable_find_similar: bool = True,
-        enable_answer: bool = True,
-        enable_research: bool = False,
+        search: bool = True,
+        get_contents: bool = True,
+        find_similar: bool = True,
+        answer: bool = True,
+        research: bool = False,
         all: bool = False,
         text: bool = True,
         text_length_limit: int = 1000,
@@ -96,15 +96,15 @@ class ExaTools(Toolkit):
         self.research_model: Literal["exa-research", "exa-research-pro"] = research_model
 
         tools: List[Any] = []
-        if all or enable_search:
+        if all or search:
             tools.append(self.search_exa)
-        if all or enable_get_contents:
+        if all or get_contents:
             tools.append(self.get_contents)
-        if all or enable_find_similar:
+        if all or find_similar:
             tools.append(self.find_similar)
-        if all or enable_answer:
+        if all or answer:
             tools.append(self.exa_answer)
-        if all or enable_research:
+        if all or research:
             tools.append(self.research)
 
         super().__init__(name="exa", tools=tools, **kwargs)
@@ -180,10 +180,10 @@ class ExaTools(Toolkit):
             return parsed_results
         except TimeoutError as e:
             log_error(f"Search timed out after {self.timeout} seconds: {str(e)}")
-            return f"Error: {str(e)}"
+            return json.dumps({"error": str(e)})
         except Exception as e:
             logger.exception("Failed to search exa")
-            return f"Error: {e}"
+            return json.dumps({"error": str(e)})
 
     def get_contents(self, urls: list[str]) -> str:
         """
@@ -215,10 +215,10 @@ class ExaTools(Toolkit):
             return parsed_results
         except TimeoutError as e:
             log_error(f"Get contents timed out after {self.timeout} seconds: {str(e)}")
-            return f"Error: {str(e)}"
+            return json.dumps({"error": str(e)})
         except Exception as e:
             logger.exception("Failed to get contents from Exa")
-            return f"Error: {e}"
+            return json.dumps({"error": str(e)})
 
     def find_similar(self, url: str, num_results: int = 5) -> str:
         """
@@ -258,10 +258,10 @@ class ExaTools(Toolkit):
             return parsed_results
         except TimeoutError as e:
             log_error(f"Find similar timed out after {self.timeout} seconds: {str(e)}")
-            return f"Error: {str(e)}"
+            return json.dumps({"error": str(e)})
         except Exception as e:
             logger.exception("Failed to get similar links from Exa")
-            return f"Error: {e}"
+            return json.dumps({"error": str(e)})
 
     def exa_answer(self, query: str, text: bool = False) -> str:
         """
@@ -309,10 +309,10 @@ class ExaTools(Toolkit):
 
         except TimeoutError as e:
             log_error(f"Answer generation timed out after {self.timeout} seconds: {str(e)}")
-            return f"Error: {str(e)}"
+            return json.dumps({"error": str(e)})
         except Exception as e:
             logger.exception("Failed to get answer from Exa")
-            return f"Error: {e}"
+            return json.dumps({"error": str(e)})
 
     def research(
         self,
@@ -342,14 +342,14 @@ class ExaTools(Toolkit):
             else:
                 task_kwargs["output_infer_schema"] = True
 
-            task_result = self._execute_with_timeout(self.exa.research.create_task, **task_kwargs)  # type: ignore
+            task_result = self._execute_with_timeout(self.exa.research.create, **task_kwargs)  # type: ignore
             task_id = task_result.id
 
             if self.show_results:
                 log_info(f"Research task created with ID: {task_id}")
 
             # Step 2: Poll until complete (using default polling settings)
-            task = self.exa.research.poll_task(task_id)  # type: ignore
+            task = self.exa.research.poll_until_finished(task_id)  # type: ignore
 
             # Step 3: Format and return results
             result: Dict[str, Any] = {"data": task.data, "citations": {}}

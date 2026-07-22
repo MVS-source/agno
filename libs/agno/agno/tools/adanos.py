@@ -27,10 +27,10 @@ class AdanosTools(Toolkit):
         api_key: Optional[str] = None,
         base_url: str = "https://api.adanos.org",
         timeout: float = 20.0,
-        enable_stock_sentiment: bool = True,
-        enable_crypto_sentiment: bool = True,
-        enable_trending: bool = True,
-        enable_market_sentiment: bool = True,
+        stock_sentiment: bool = True,
+        crypto_sentiment: bool = True,
+        trending: bool = True,
+        market_sentiment: bool = True,
         all: bool = False,
         **kwargs,
     ):
@@ -40,10 +40,10 @@ class AdanosTools(Toolkit):
             api_key: Adanos API key. Uses ``ADANOS_API_KEY`` when omitted.
             base_url: Adanos API base URL.
             timeout: Per-request timeout in seconds.
-            enable_stock_sentiment: Register the stock sentiment tool.
-            enable_crypto_sentiment: Register the crypto sentiment tool.
-            enable_trending: Register the trending assets tool.
-            enable_market_sentiment: Register the aggregate market sentiment tool.
+            stock_sentiment: Register the stock sentiment tool.
+            crypto_sentiment: Register the crypto sentiment tool.
+            trending: Register the trending assets tool.
+            market_sentiment: Register the aggregate market sentiment tool.
             all: Register all tools regardless of individual flags.
         """
         self.api_key = api_key or getenv("ADANOS_API_KEY")
@@ -55,16 +55,16 @@ class AdanosTools(Toolkit):
 
         tools: List[Any] = []
         async_tools: List[tuple] = []
-        if all or enable_stock_sentiment:
+        if all or stock_sentiment:
             tools.append(self.get_stock_sentiment)
             async_tools.append((self.aget_stock_sentiment, "get_stock_sentiment"))
-        if all or enable_crypto_sentiment:
+        if all or crypto_sentiment:
             tools.append(self.get_crypto_sentiment)
             async_tools.append((self.aget_crypto_sentiment, "get_crypto_sentiment"))
-        if all or enable_trending:
+        if all or trending:
             tools.append(self.get_trending)
             async_tools.append((self.aget_trending, "get_trending"))
-        if all or enable_market_sentiment:
+        if all or market_sentiment:
             tools.append(self.get_market_sentiment)
             async_tools.append((self.aget_market_sentiment, "get_market_sentiment"))
 

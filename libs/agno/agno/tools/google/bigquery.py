@@ -30,10 +30,6 @@ class GoogleBigQueryTools(Toolkit):
         list_tables: bool = True,
         describe_table: bool = True,
         run_sql_query: bool = True,
-        # Backward compat aliases (deprecated)
-        enable_list_tables: Optional[bool] = None,
-        enable_describe_table: Optional[bool] = None,
-        enable_run_sql_query: Optional[bool] = None,
         all: bool = False,
         **kwargs,
     ):
@@ -47,20 +43,15 @@ class GoogleBigQueryTools(Toolkit):
 
         self.dataset = dataset
 
-        # Resolve deprecated aliases: explicit deprecated flag overrides new flag
-        _list_tables = enable_list_tables if enable_list_tables is not None else list_tables
-        _describe_table = enable_describe_table if enable_describe_table is not None else describe_table
-        _run_sql_query = enable_run_sql_query if enable_run_sql_query is not None else run_sql_query
-
         # Initialize the BQ CLient
         self.client = bigquery.Client(project=self.project, credentials=credentials)
 
         tools: List[Any] = []
-        if all or _list_tables:
+        if all or list_tables:
             tools.append(self.list_tables)
-        if all or _describe_table:
+        if all or describe_table:
             tools.append(self.describe_table)
-        if all or _run_sql_query:
+        if all or run_sql_query:
             tools.append(self.run_sql_query)
 
         super().__init__(name="google_bigquery_tools", tools=tools, **kwargs)
@@ -78,7 +69,7 @@ class GoogleBigQueryTools(Toolkit):
             return tables_str
         except Exception as e:
             logger.exception("Error getting tables")
-            return f"Error getting tables: {e}"
+            return json.dumps({"error": f"Error getting tables: {e}"})
 
     def describe_table(self, table_id: str) -> str:
         """Use this function to describe a table.
@@ -98,7 +89,7 @@ class GoogleBigQueryTools(Toolkit):
             return result
         except Exception as e:
             logger.exception("Error getting table schema")
-            return f"Error getting table schema: {e}"
+            return json.dumps({"error": f"Error getting table schema: {e}"})
 
     def run_sql_query(self, query: str) -> str:
         """Use this function to run a BigQuery SQL query and return the result.
@@ -113,7 +104,7 @@ class GoogleBigQueryTools(Toolkit):
             return json.dumps(self._run_sql(sql=query), default=str)
         except Exception as e:
             logger.exception("Error running query")
-            return f"Error running query: {e}"
+            return json.dumps({"error": f"Error running query: {e}"})
 
     def _run_sql(self, sql: str) -> str:
         """Internal function to run a sql query.

@@ -1,3 +1,4 @@
+import json
 from os import getenv
 from typing import Any, List, Optional
 
@@ -15,8 +16,7 @@ class ResendTools(Toolkit):
         self,
         api_key: Optional[str] = None,
         from_email: Optional[str] = None,
-        enable_send_email: bool = True,
-        all: bool = False,
+        send_email: bool = True,
         **kwargs,
     ):
         self.from_email = from_email
@@ -25,7 +25,7 @@ class ResendTools(Toolkit):
             log_error("No Resend API key provided")
 
         tools: List[Any] = []
-        if all or enable_send_email:
+        if send_email:
             tools.append(self.send_email)
 
         super().__init__(name="resend_tools", tools=tools, **kwargs)
@@ -40,9 +40,9 @@ class ResendTools(Toolkit):
         """
 
         if not self.api_key:
-            return "Please provide an API key"
+            return json.dumps({"error": "Please provide an API key"})
         if not to_email:
-            return "Please provide an email address to send the email to"
+            return json.dumps({"error": "Please provide an email address to send the email to"})
 
         log_info(f"Sending email to: {to_email}")
 
@@ -59,4 +59,4 @@ class ResendTools(Toolkit):
             return f"Email sent to {to_email} successfully."
         except Exception as e:
             logger.exception("Failed to send email")
-            return f"Error: {e}"
+            return json.dumps({"error": str(e)})

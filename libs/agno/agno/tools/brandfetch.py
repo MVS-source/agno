@@ -29,9 +29,8 @@ class BrandfetchTools(Toolkit):
 
     client_id: str - your Brandfetch Client ID
 
-    all: bool - if True, will use all tools
-    enable_search_by_identifier: bool - if True, will use search by identifier
-    enable_search_by_brand: bool - if True, will use search by brand
+    search_by_identifier: bool - if True, will use search by identifier
+    search_by_brand: bool - if True, will use search by brand
     """
 
     def __init__(
@@ -40,9 +39,8 @@ class BrandfetchTools(Toolkit):
         client_id: Optional[str] = None,
         base_url: str = "https://api.brandfetch.io/v2",
         timeout: Optional[float] = 20.0,
-        enable_search_by_identifier: bool = True,
-        enable_search_by_brand: bool = False,
-        all: bool = False,
+        search_by_identifier: bool = True,
+        search_by_brand: bool = False,
         async_tools: bool = False,  # Deprecated
         **kwargs,
     ):
@@ -68,10 +66,10 @@ class BrandfetchTools(Toolkit):
         tools: List[Any] = []
         async_tools_list: List[tuple] = []
 
-        if all or enable_search_by_identifier:
+        if search_by_identifier:
             tools.append(self.search_by_identifier)
             async_tools_list.append((self.asearch_by_identifier, "search_by_identifier"))
-        if all or enable_search_by_brand:
+        if search_by_brand:
             tools.append(self.search_by_brand)
             async_tools_list.append((self.asearch_by_brand, "search_by_brand"))
 

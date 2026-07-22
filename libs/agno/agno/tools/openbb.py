@@ -1,9 +1,8 @@
 import json
-from os import getenv
 from typing import Any, List, Literal, Optional
 
 from agno.tools import Toolkit
-from agno.utils.log import log_debug, logger
+from agno.utils.log import log_debug
 
 try:
     from openbb import obb as openbb_app
@@ -15,35 +14,30 @@ class OpenBBTools(Toolkit):
     def __init__(
         self,
         obb: Optional[Any] = None,
-        openbb_pat: Optional[str] = None,
         provider: Literal["benzinga", "fmp", "intrinio", "polygon", "tiingo", "tmx", "yfinance"] = "yfinance",
-        enable_get_stock_price: bool = True,
-        enable_search_company_symbol: bool = False,
-        enable_get_company_news: bool = False,
-        enable_get_company_profile: bool = False,
-        enable_get_price_targets: bool = False,
+        get_stock_price: bool = True,
+        search_company_symbol: bool = False,
+        get_company_news: bool = False,
+        get_company_profile: bool = False,
+        get_price_targets: bool = False,
         all: bool = False,
         **kwargs,
     ):
+        # OpenBB v4.x credentials are set via obb.user.credentials or user_settings.json
         self.obb = obb or openbb_app
-        try:
-            if openbb_pat or getenv("OPENBB_PAT"):
-                self.obb.account.login(pat=openbb_pat or getenv("OPENBB_PAT"))  # type: ignore
-        except Exception:
-            logger.exception("Error logging into OpenBB")
 
         self.provider: Literal["benzinga", "fmp", "intrinio", "polygon", "tiingo", "tmx", "yfinance"] = provider
 
         tools: List[Any] = []
-        if enable_get_stock_price or all:
+        if all or get_stock_price:
             tools.append(self.get_stock_price)
-        if enable_search_company_symbol or all:
+        if all or search_company_symbol:
             tools.append(self.search_company_symbol)
-        if enable_get_company_news or all:
+        if all or get_company_news:
             tools.append(self.get_company_news)
-        if enable_get_company_profile or all:
+        if all or get_company_profile:
             tools.append(self.get_company_profile)
-        if enable_get_price_targets or all:
+        if all or get_price_targets:
             tools.append(self.get_price_targets)
 
         super().__init__(name="openbb_tools", tools=tools, **kwargs)

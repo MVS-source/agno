@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 from uuid import uuid4
@@ -11,10 +12,9 @@ class LocalFileSystemTools(Toolkit):
         self,
         target_directory: Optional[str] = None,
         default_extension: str = "txt",
-        enable_write_file: bool = True,
-        enable_read_file: bool = True,
+        write_file: bool = True,
+        read_file: bool = True,
         restrict_to_base_dir: bool = True,
-        all: bool = False,
         **kwargs,
     ):
         """
@@ -22,8 +22,8 @@ class LocalFileSystemTools(Toolkit):
         Args:
             target_directory (Optional[str]): Default directory to write files to. Creates if doesn't exist.
             default_extension (str): Default file extension to use if none specified.
-            enable_write_file (bool): Enable the write_file tool.
-            enable_read_file (bool): Enable the read_file tool.
+            write_file (bool): Enable the write_file tool.
+            read_file (bool): Enable the read_file tool.
             restrict_to_base_dir (bool): If True, file operations cannot escape target_directory.
         """
 
@@ -35,9 +35,9 @@ class LocalFileSystemTools(Toolkit):
         target_path.mkdir(parents=True, exist_ok=True)
 
         tools: List[Any] = []
-        if all or enable_write_file:
+        if write_file:
             tools.append(self.write_file)
-        if all or enable_read_file:
+        if read_file:
             tools.append(self.read_file)
 
         super().__init__(name="local_file_system", tools=tools, **kwargs)
@@ -84,7 +84,7 @@ class LocalFileSystemTools(Toolkit):
 
             safe, file_path = self.check_escape(full_name, directory)
             if not safe:
-                return f"Error: Path '{filename}' is outside the allowed base directory"
+                return json.dumps({"error": f"Path '{filename}' is outside the allowed base directory"})
 
             log_debug(f"Writing file to local system: {file_path.name}")
 
@@ -98,7 +98,7 @@ class LocalFileSystemTools(Toolkit):
         except Exception as e:
             error_msg = f"Failed to write file: {str(e)}"
             log_error(error_msg)
-            return f"Error: {error_msg}"
+            return json.dumps({"error": error_msg})
 
     def read_file(self, filename: str, directory: Optional[str] = None) -> str:
         """
@@ -112,16 +112,16 @@ class LocalFileSystemTools(Toolkit):
         try:
             safe, file_path = self.check_escape(filename, directory)
             if not safe:
-                return f"Error: Path '{filename}' is outside the allowed base directory"
+                return json.dumps({"error": f"Path '{filename}' is outside the allowed base directory"})
 
             log_debug(f"Reading file from local system: {filename}")
 
             if not file_path.exists():
-                return f"File not found: {file_path}"
+                return json.dumps({"error": f"File not found: {file_path}"})
 
             return file_path.read_text()
 
         except Exception as e:
             error_msg = f"Failed to read file: {str(e)}"
             log_error(error_msg)
-            return f"Error: {error_msg}"
+            return json.dumps({"error": error_msg})

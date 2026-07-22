@@ -19,8 +19,8 @@ class WebSearchTools(Toolkit):
     Multiple search backends (e.g. google, bing, duckduckgo) are available.
 
     Args:
-        enable_search (bool): Enable web search function.
-        enable_news (bool): Enable news search function.
+        search (bool): Enable web search function.
+        news (bool): Enable news search function.
         backend (str): The backend to use for searching. Defaults to "auto" which
             automatically selects available backends. Other options include:
             "duckduckgo", "google", "bing", "brave", "yandex", "yahoo", etc.
@@ -36,8 +36,8 @@ class WebSearchTools(Toolkit):
 
     def __init__(
         self,
-        enable_search: bool = True,
-        enable_news: bool = True,
+        search: bool = True,
+        news: bool = True,
         backend: str = "auto",
         modifier: Optional[str] = None,
         fixed_max_results: Optional[int] = None,
@@ -64,9 +64,9 @@ class WebSearchTools(Toolkit):
         self.region: Optional[str] = region
 
         tools: List[Any] = []
-        if enable_search:
+        if search:
             tools.append(self.web_search)
-        if enable_news:
+        if news:
             tools.append(self.search_news)
 
         super().__init__(name="websearch", tools=tools, **kwargs)

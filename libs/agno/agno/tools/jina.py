@@ -1,3 +1,4 @@
+import json
 from os import getenv
 from typing import Any, Dict, List, Optional
 
@@ -26,9 +27,8 @@ class JinaReaderTools(Toolkit):
         max_content_length: int = 10000,
         timeout: Optional[int] = None,
         search_query_content: bool = True,
-        enable_read_url: bool = True,
-        enable_search_query: bool = False,
-        all: bool = False,
+        read_url: bool = True,
+        search_query: bool = False,
         **kwargs,
     ):
         self.api_key = api_key or getenv("JINA_API_KEY")
@@ -42,9 +42,9 @@ class JinaReaderTools(Toolkit):
         )
 
         tools: List[Any] = []
-        if all or enable_read_url:
+        if read_url:
             tools.append(self.read_url)
-        if all or enable_search_query:
+        if search_query:
             tools.append(self.search_query)
 
         super().__init__(name="jina_reader_tools", tools=tools, **kwargs)
@@ -60,7 +60,7 @@ class JinaReaderTools(Toolkit):
         except Exception as e:
             error_msg = f"Error reading URL: {str(e)}"
             log_error(error_msg)
-            return error_msg
+            return json.dumps({"error": error_msg})
 
     def search_query(self, query: str) -> str:
         """Performs a web search using Jina Reader API and returns the truncated results."""
@@ -78,7 +78,7 @@ class JinaReaderTools(Toolkit):
         except Exception as e:
             error_msg = f"Error performing search: {str(e)}"
             log_error(error_msg)
-            return error_msg
+            return json.dumps({"error": error_msg})
 
     def _get_headers(self) -> Dict[str, str]:
         headers = {

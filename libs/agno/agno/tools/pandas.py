@@ -10,19 +10,123 @@ except ImportError:
 
 
 class PandasTools(Toolkit):
+    # Allowlist of safe pandas functions for creating dataframes
+    SAFE_CREATE_FUNCTIONS = frozenset(
+        {
+            "read_csv",
+            "read_json",
+            "read_excel",
+            "read_parquet",
+            "read_feather",
+            "read_orc",
+            "read_sql",
+            "read_sql_query",
+            "read_sql_table",
+            "read_html",
+            "read_xml",
+            "read_clipboard",
+            "read_fwf",
+            "read_table",
+            "DataFrame",
+            "json_normalize",
+        }
+    )
+
+    # Allowlist of safe dataframe operations
+    SAFE_OPERATIONS = frozenset(
+        {
+            "head",
+            "tail",
+            "info",
+            "describe",
+            "shape",
+            "columns",
+            "dtypes",
+            "index",
+            "values",
+            "to_string",
+            "to_dict",
+            "to_json",
+            "to_csv",
+            "to_markdown",
+            "to_html",
+            "count",
+            "sum",
+            "mean",
+            "median",
+            "std",
+            "var",
+            "min",
+            "max",
+            "abs",
+            "round",
+            "sort_values",
+            "sort_index",
+            "groupby",
+            "pivot",
+            "pivot_table",
+            "melt",
+            "merge",
+            "join",
+            "concat",
+            "drop",
+            "drop_duplicates",
+            "dropna",
+            "fillna",
+            "replace",
+            "rename",
+            "reset_index",
+            "set_index",
+            "transpose",
+            "T",
+            "loc",
+            "iloc",
+            "at",
+            "iat",
+            "query",
+            "filter",
+            "select_dtypes",
+            "sample",
+            "nlargest",
+            "nsmallest",
+            "unique",
+            "nunique",
+            "value_counts",
+            "isnull",
+            "isna",
+            "notna",
+            "notnull",
+            "any",
+            "all",
+            "corr",
+            "cov",
+            "cumsum",
+            "cumprod",
+            "cummax",
+            "cummin",
+            "diff",
+            "pct_change",
+            "rank",
+            "clip",
+            "between",
+            "isin",
+            "copy",
+            "astype",
+        }
+    )
+
     def __init__(
         self,
-        enable_create_pandas_dataframe: bool = True,
-        enable_run_dataframe_operation: bool = True,
-        all: bool = False,
+        create_pandas_dataframe: bool = True,
+        run_dataframe_operation: bool = True,
         **kwargs,
     ):
         self.dataframes: Dict[str, pd.DataFrame] = {}
 
         tools: List[Any] = []
-        if all or enable_create_pandas_dataframe:
+        if create_pandas_dataframe:
             tools.append(self.create_pandas_dataframe)
-        if all or enable_run_dataframe_operation:
+        if run_dataframe_operation:
             tools.append(self.run_dataframe_operation)
 
         super().__init__(name="pandas_tools", tools=tools, **kwargs)
@@ -49,6 +153,10 @@ class PandasTools(Toolkit):
 
             if dataframe_name in self.dataframes:
                 return f"Dataframe already exists: {dataframe_name}"
+
+            # Validate function against allowlist to prevent RCE (e.g., read_pickle)
+            if create_using_function not in self.SAFE_CREATE_FUNCTIONS:
+                return f"Error: Function '{create_using_function}' is not allowed. Use one of: {', '.join(sorted(self.SAFE_CREATE_FUNCTIONS))}"
 
             # Create the dataframe
             dataframe = getattr(pd, create_using_function)(**function_parameters)
@@ -83,8 +191,14 @@ class PandasTools(Toolkit):
             log_debug(f"On dataframe: {dataframe_name}")
             log_debug(f"With parameters: {operation_parameters}")
 
+            # Validate operation against allowlist
+            if operation not in self.SAFE_OPERATIONS:
+                return f"Error: Operation '{operation}' is not allowed. Use one of: {', '.join(sorted(self.SAFE_OPERATIONS))}"
+
             # Get the dataframe
             dataframe = self.dataframes.get(dataframe_name)
+            if dataframe is None:
+                return f"Error: Dataframe '{dataframe_name}' not found"
 
             # Run the operation
             result = getattr(dataframe, operation)(**operation_parameters)

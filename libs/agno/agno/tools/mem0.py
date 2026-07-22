@@ -18,43 +18,39 @@ class Mem0Tools(Toolkit):
         self,
         config: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
+        host: Optional[str] = None,
         user_id: Optional[str] = None,
-        org_id: Optional[str] = None,
-        project_id: Optional[str] = None,
         infer: bool = True,
-        enable_add_memory: bool = True,
-        enable_search_memory: bool = True,
-        enable_get_all_memories: bool = True,
-        enable_delete_all_memories: bool = True,
+        add_memory: bool = True,
+        search_memory: bool = True,
+        get_all_memories: bool = True,
+        delete_all_memories: bool = True,
         all: bool = False,
         **kwargs,
     ):
         tools: List[Any] = []
-        if enable_add_memory or all:
+        if all or add_memory:
             tools.append(self.add_memory)
-        if enable_search_memory or all:
+        if all or search_memory:
             tools.append(self.search_memory)
-        if enable_get_all_memories or all:
+        if all or get_all_memories:
             tools.append(self.get_all_memories)
-        if enable_delete_all_memories or all:
+        if all or delete_all_memories:
             tools.append(self.delete_all_memories)
 
         super().__init__(name="mem0_tools", tools=tools, **kwargs)
         self.api_key = api_key or getenv("MEM0_API_KEY")
+        self.host = host or getenv("MEM0_HOST")
         self.user_id = user_id
-        self.org_id = org_id or getenv("MEM0_ORG_ID")
-        self.project_id = project_id or getenv("MEM0_PROJECT_ID")
         self.client: Union[Memory, MemoryClient]
         self.infer = infer
 
         try:
             if self.api_key:
                 log_debug("Using Mem0 Platform API key.")
-                client_kwargs = {"api_key": self.api_key}
-                if self.org_id:
-                    client_kwargs["org_id"] = self.org_id
-                if self.project_id:
-                    client_kwargs["project_id"] = self.project_id
+                client_kwargs: Dict[str, Any] = {"api_key": self.api_key}
+                if self.host:
+                    client_kwargs["host"] = self.host
                 self.client = MemoryClient(**client_kwargs)
             elif config is not None:
                 log_debug("Using Mem0 with config.")
@@ -118,7 +114,7 @@ class Mem0Tools(Toolkit):
             return json.dumps(result)
         except Exception as e:
             log_error(f"Error adding memory: {str(e)}")
-            return f"Error adding memory: {e}"
+            return json.dumps({"error": f"Error adding memory: {e}"})
 
     def search_memory(
         self,
@@ -147,10 +143,10 @@ class Mem0Tools(Toolkit):
             return json.dumps(search_results_list)
         except ValueError as ve:
             log_error(str(ve))
-            return str(ve)
+            return json.dumps({"error": str(ve)})
         except Exception as e:
             log_error(f"Error searching memory: {str(e)}")
-            return f"Error searching memory: {e}"
+            return json.dumps({"error": f"Error searching memory: {e}"})
 
     def get_all_memories(self, run_context: RunContext) -> str:
         """Return **all** memories for the current user as a JSON string."""
@@ -173,10 +169,10 @@ class Mem0Tools(Toolkit):
             return json.dumps(memories_list)
         except ValueError as ve:
             log_error(str(ve))
-            return str(ve)
+            return json.dumps({"error": str(ve)})
         except Exception as e:
             log_error(f"Error getting all memories: {str(e)}")
-            return f"Error getting all memories: {e}"
+            return json.dumps({"error": f"Error getting all memories: {e}"})
 
     def delete_all_memories(self, run_context: RunContext) -> str:
         """Delete *all* memories associated with the current user"""
@@ -185,10 +181,12 @@ class Mem0Tools(Toolkit):
         if isinstance(resolved_user_id, str) and resolved_user_id.startswith("Error in delete_all_memories:"):
             error_msg = resolved_user_id
             log_error(error_msg)
-            return f"Error deleting all memories: {error_msg}"
+            return json.dumps({"error": f"Error deleting all memories: {error_msg}"})
         try:
             self.client.delete_all(user_id=resolved_user_id)
-            return f"Successfully deleted all memories for user_id: {resolved_user_id}."
+            return json.dumps(
+                {"status": "success", "message": f"Successfully deleted all memories for user_id: {resolved_user_id}"}
+            )
         except Exception as e:
             log_error(f"Error deleting all memories: {str(e)}")
-            return f"Error deleting all memories: {e}"
+            return json.dumps({"error": f"Error deleting all memories: {e}"})

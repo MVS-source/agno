@@ -16,9 +16,9 @@ class SpiderTools(Toolkit):
     Spider is a toolkit for web searching, scraping, and crawling.
 
     Args:
-        enable_search (bool): Enable web search functionality. Default is True.
-        enable_scrape (bool): Enable web scraping functionality. Default is True.
-        enable_crawl (bool): Enable web crawling functionality. Default is True.
+        search (bool): Enable web search functionality. Default is True.
+        scrape (bool): Enable web scraping functionality. Default is True.
+        crawl (bool): Enable web crawling functionality. Default is True.
         all (bool): Enable all tools. Overrides individual flags when True. Default is False.
         max_results (Optional[int]): Default maximum number of results.
         url (Optional[str]): Default URL for operations.
@@ -30,9 +30,9 @@ class SpiderTools(Toolkit):
         max_results: Optional[int] = None,
         url: Optional[str] = None,
         optional_params: Optional[dict] = None,
-        enable_search: bool = True,
-        enable_scrape: bool = True,
-        enable_crawl: bool = True,
+        search: bool = True,
+        scrape: bool = True,
+        crawl: bool = True,
         all: bool = False,
         **kwargs,
     ):
@@ -41,11 +41,11 @@ class SpiderTools(Toolkit):
         self.optional_params = optional_params or {}
 
         tools: List[Any] = []
-        if enable_search or all:
+        if all or search:
             tools.append(self.search_web)
-        if enable_scrape or all:
+        if all or scrape:
             tools.append(self.scrape)
-        if enable_crawl or all:
+        if all or crawl:
             tools.append(self.crawl)
 
         super().__init__(name="spider", tools=tools, **kwargs)
@@ -91,7 +91,7 @@ class SpiderTools(Toolkit):
             return json.dumps(results)
         except Exception as e:
             logger.exception("Error fetching results from spider")
-            return f"Error fetching results from spider: {e}"
+            return json.dumps({"error": f"Error fetching results from spider: {e}"})
 
     def _scrape(self, url: str) -> str:
         app = ExternalSpider()
@@ -102,7 +102,7 @@ class SpiderTools(Toolkit):
             return json.dumps(results)
         except Exception as e:
             logger.exception("Error fetching content from spider")
-            return f"Error fetching content from spider: {e}"
+            return json.dumps({"error": f"Error fetching content from spider: {e}"})
 
     def _crawl(self, url: str, limit: Optional[int] = None) -> str:
         app = ExternalSpider()
@@ -116,4 +116,4 @@ class SpiderTools(Toolkit):
             return json.dumps(results)
         except Exception as e:
             logger.exception("Error fetching content from spider")
-            return f"Error fetching content from spider: {e}"
+            return json.dumps({"error": f"Error fetching content from spider: {e}"})

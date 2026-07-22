@@ -17,11 +17,10 @@ class Neo4jTools(Toolkit):
         user: Optional[str] = None,
         password: Optional[str] = None,
         database: Optional[str] = None,
-        # Enable flags for <6 functions
-        enable_list_labels: bool = True,
-        enable_list_relationships: bool = True,
-        enable_get_schema: bool = True,
-        enable_run_cypher: bool = True,
+        list_labels: bool = True,
+        list_relationships: bool = True,
+        get_schema: bool = True,
+        run_cypher: bool = True,
         all: bool = False,
         **kwargs,
     ):
@@ -34,13 +33,12 @@ class Neo4jTools(Toolkit):
             uri (Optional[str]): The Neo4j URI.
             user (Optional[str]): The Neo4j username.
             password (Optional[str]): The Neo4j password.
-            host (Optional[str]): The Neo4j host.
-            port (Optional[int]): The Neo4j port.
             database (Optional[str]): The Neo4j database.
-            list_labels (bool): Whether to list node labels.
-            list_relationships (bool): Whether to list relationship types.
-            get_schema (bool): Whether to get the schema.
-            run_cypher (bool): Whether to run Cypher queries.
+            list_labels (bool): Whether to register the list_labels tool.
+            list_relationships (bool): Whether to register the list_relationship_types tool.
+            get_schema (bool): Whether to register the get_schema tool.
+            run_cypher (bool): Whether to register the run_cypher_query tool.
+            all (bool): Whether to register all tools.
             **kwargs: Additional keyword arguments.
         """
         # Determine the connection URI and credentials
@@ -64,13 +62,13 @@ class Neo4jTools(Toolkit):
 
         # Register toolkit methods as tools
         tools: List[Any] = []
-        if all or enable_list_labels:
+        if all or list_labels:
             tools.append(self.list_labels)
-        if all or enable_list_relationships:
+        if all or list_relationships:
             tools.append(self.list_relationship_types)
-        if all or enable_get_schema:
+        if all or get_schema:
             tools.append(self.get_schema)
-        if all or enable_run_cypher:
+        if all or run_cypher:
             tools.append(self.run_cypher_query)
         super().__init__(name="neo4j_tools", tools=tools, **kwargs)
 

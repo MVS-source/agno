@@ -17,9 +17,9 @@ class ValyuTools(Toolkit):
 
     Args:
         api_key (Optional[str]): Valyu API key. Retrieved from VALYU_API_KEY env variable if not provided.
-        enable_academic_search (bool): Enable academic sources search functionality. Default is True.
-        enable_web_search (bool): Enable web search functionality. Default is True.
-        enable_paper_search (bool): Enable search within paper functionality. Default is True.
+        academic_search (bool): Enable academic sources search functionality. Default is True.
+        web_search (bool): Enable web search functionality. Default is True.
+        paper_search (bool): Enable search within paper functionality. Default is True.
         all (bool): Enable all tools. Overrides individual flags when True. Default is False.
         text_length (int): Maximum length of text content per result. Default is 1000.
         max_results (int): Maximum number of results to return. Default is 10.
@@ -36,9 +36,9 @@ class ValyuTools(Toolkit):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        enable_academic_search: bool = True,
-        enable_web_search: bool = True,
-        enable_paper_search: bool = True,
+        academic_search: bool = True,
+        web_search: bool = True,
+        paper_search: bool = True,
         all: bool = False,
         text_length: int = 1000,
         max_results: int = 10,
@@ -69,11 +69,11 @@ class ValyuTools(Toolkit):
         self.tool_call_mode = tool_call_mode
 
         tools: List[Any] = []
-        if all or enable_academic_search:
+        if all or academic_search:
             tools.append(self.search_academic_sources)
-        if all or enable_web_search:
+        if all or web_search:
             tools.append(self.search_web)
-        if all or enable_paper_search:
+        if all or paper_search:
             tools.append(self.search_within_paper)
 
         super().__init__(name="valyu_search", tools=tools, **kwargs)
@@ -142,14 +142,14 @@ class ValyuTools(Toolkit):
 
             if not response.success:
                 log_error(f"Valyu search API error: {response.error}")
-                return f"Error: {response.error or 'Search request failed'}"
+                return json.dumps({"error": response.error or "Search request failed"})
 
             return self._parse_results(response.results or [])
 
         except Exception as e:
             error_msg = f"Valyu search failed: {str(e)}"
             log_error(error_msg)
-            return f"Error: {error_msg}"
+            return json.dumps({"error": error_msg})
 
     def search_academic_sources(
         self,
@@ -219,7 +219,7 @@ class ValyuTools(Toolkit):
         # Validate ArXiv URL
         if not paper_url.startswith("https:/"):
             log_warning(f"Invalid paper URL: {paper_url}")
-            return "Error: Invalid paper URL format"
+            return json.dumps({"error": "Invalid paper URL format"})
 
         return self._valyu_search(
             query=query,

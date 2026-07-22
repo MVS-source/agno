@@ -11,9 +11,8 @@ class AirflowTools(Toolkit):
     def __init__(
         self,
         dags_dir: Optional[Union[Path, str]] = None,
-        enable_save_dag_file: bool = True,
-        enable_read_dag_file: bool = True,
-        all: bool = False,
+        save_dag_file: bool = True,
+        read_dag_file: bool = True,
         **kwargs,
     ):
         """
@@ -23,9 +22,9 @@ class AirflowTools(Toolkit):
         self.dags_dir = Path(dags_dir).resolve() if dags_dir is not None else Path.cwd().resolve()
 
         tools: List[Any] = []
-        if all or enable_save_dag_file:
+        if save_dag_file:
             tools.append(self.save_dag_file)
-        if all or enable_read_dag_file:
+        if read_dag_file:
             tools.append(self.read_dag_file)
 
         super().__init__(name="AirflowTools", tools=tools, **kwargs)

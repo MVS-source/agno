@@ -18,19 +18,19 @@ class NotionTools(Toolkit):
     Args:
         api_key (Optional[str]): Notion API key (integration token). If not provided, uses NOTION_API_KEY env var.
         database_id (Optional[str]): The ID of the database to work with. If not provided, uses NOTION_DATABASE_ID env var.
-        enable_create_page (bool): Enable creating pages. Default is True.
-        enable_update_page (bool): Enable updating pages. Default is True.
-        enable_search_pages (bool): Enable searching pages. Default is True.
-        all (bool): Enable all tools. Overrides individual flags when True. Default is False.
+        create_page (bool): Whether to register the create_page tool.
+        update_page (bool): Whether to register the update_page tool.
+        search_pages (bool): Whether to register the search_pages tool.
+        all (bool): Whether to register all tools.
     """
 
     def __init__(
         self,
         api_key: Optional[str] = None,
         database_id: Optional[str] = None,
-        enable_create_page: bool = True,
-        enable_update_page: bool = True,
-        enable_search_pages: bool = True,
+        create_page: bool = True,
+        update_page: bool = True,
+        search_pages: bool = True,
         all: bool = False,
         **kwargs,
     ):
@@ -49,11 +49,11 @@ class NotionTools(Toolkit):
         self.client = Client(auth=self.api_key)
 
         tools: List[Any] = []
-        if all or enable_create_page:
+        if all or create_page:
             tools.append(self.create_page)
-        if all or enable_update_page:
+        if all or update_page:
             tools.append(self.update_page)
-        if all or enable_search_pages:
+        if all or search_pages:
             tools.append(self.search_pages)
 
         super().__init__(name="notion_tools", tools=tools, **kwargs)

@@ -51,6 +51,14 @@ class SchedulerTools(Toolkit):
         default_method: str = "POST",
         default_timezone: str = "UTC",
         default_payload: Optional[Dict[str, Any]] = None,
+        create_schedule: bool = True,
+        list_schedules: bool = True,
+        get_schedule: bool = True,
+        delete_schedule: bool = True,
+        enable_schedule: bool = True,
+        disable_schedule: bool = True,
+        get_schedule_runs: bool = True,
+        all: bool = False,
         **kwargs: Any,
     ):
         self.manager = ScheduleManager(db=db)
@@ -59,25 +67,30 @@ class SchedulerTools(Toolkit):
         self.default_timezone = default_timezone
         self.default_payload = default_payload
 
-        tools: List[Callable] = [
-            self.create_schedule,
-            self.list_schedules,
-            self.get_schedule,
-            self.delete_schedule,
-            self.enable_schedule,
-            self.disable_schedule,
-            self.get_schedule_runs,
-        ]
+        tools: List[Callable] = []
+        async_tools: List[tuple[Callable[..., Any], str]] = []
 
-        async_tools: List[tuple[Callable[..., Any], str]] = [
-            (self.acreate_schedule, "create_schedule"),
-            (self.alist_schedules, "list_schedules"),
-            (self.aget_schedule, "get_schedule"),
-            (self.adelete_schedule, "delete_schedule"),
-            (self.aenable_schedule, "enable_schedule"),
-            (self.adisable_schedule, "disable_schedule"),
-            (self.aget_schedule_runs, "get_schedule_runs"),
-        ]
+        if all or create_schedule:
+            tools.append(self.create_schedule)
+            async_tools.append((self.acreate_schedule, "create_schedule"))
+        if all or list_schedules:
+            tools.append(self.list_schedules)
+            async_tools.append((self.alist_schedules, "list_schedules"))
+        if all or get_schedule:
+            tools.append(self.get_schedule)
+            async_tools.append((self.aget_schedule, "get_schedule"))
+        if all or delete_schedule:
+            tools.append(self.delete_schedule)
+            async_tools.append((self.adelete_schedule, "delete_schedule"))
+        if all or enable_schedule:
+            tools.append(self.enable_schedule)
+            async_tools.append((self.aenable_schedule, "enable_schedule"))
+        if all or disable_schedule:
+            tools.append(self.disable_schedule)
+            async_tools.append((self.adisable_schedule, "disable_schedule"))
+        if all or get_schedule_runs:
+            tools.append(self.get_schedule_runs)
+            async_tools.append((self.aget_schedule_runs, "get_schedule_runs"))
 
         super().__init__(
             name="scheduler",

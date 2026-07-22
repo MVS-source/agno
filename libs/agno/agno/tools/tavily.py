@@ -16,9 +16,9 @@ class TavilyTools(Toolkit):
         self,
         api_key: Optional[str] = None,
         api_base_url: Optional[str] = None,
-        enable_search: bool = True,
-        enable_search_context: bool = False,
-        enable_extract: bool = False,
+        search: bool = True,
+        search_context: bool = False,
+        extract: bool = False,
         all: bool = False,
         max_tokens: int = 6000,
         include_answer: bool = True,
@@ -47,9 +47,9 @@ class TavilyTools(Toolkit):
         Args:
             api_key: Tavily API key. If not provided, will use TAVILY_API_KEY env var.
             api_base_url: Tavily API base URL. If not provided, will use TAVILY_API_BASE_URL env var. Defaults to None. If None - will use https://api.tavily.com.
-            enable_search: Enable web search functionality. Defaults to True.
-            enable_search_context: Use search context mode instead of regular search. Defaults to False.
-            enable_extract: Enable URL content extraction functionality. Defaults to False.
+            search: Enable web search functionality. Defaults to True.
+            search_context: Use search context mode instead of regular search. Defaults to False.
+            extract: Enable URL content extraction functionality. Defaults to False.
             all: Enable all available tools. Defaults to False.
             max_tokens: Maximum tokens for search results. Defaults to 6000.
             include_answer: Include AI-generated answer in search results. Defaults to True.
@@ -102,13 +102,13 @@ class TavilyTools(Toolkit):
 
         tools: List[Any] = []
 
-        if enable_search or all:
-            if enable_search_context:
+        if all or search:
+            if search_context:
                 tools.append(self.web_search_with_tavily)
             else:
                 tools.append(self.web_search_using_tavily)
 
-        if enable_extract or all:
+        if all or extract:
             tools.append(self.extract_url_content)
 
         super().__init__(name="tavily_tools", tools=tools, **kwargs)

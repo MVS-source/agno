@@ -10,9 +10,8 @@ from agno.utils.log import log_debug, log_error
 class ReasoningTools(Toolkit):
     def __init__(
         self,
-        enable_think: bool = True,
-        enable_analyze: bool = True,
-        all: bool = False,
+        think: bool = True,
+        analyze: bool = True,
         instructions: Optional[str] = None,
         add_instructions: bool = False,
         add_few_shot: bool = False,
@@ -34,10 +33,9 @@ class ReasoningTools(Toolkit):
             self.instructions = instructions
 
         tools: List[Any] = []
-        # Prefer new flags; fallback to legacy ones
-        if all or enable_think:
+        if think:
             tools.append(self.think)
-        if all or enable_analyze:
+        if analyze:
             tools.append(self.analyze)
 
         super().__init__(

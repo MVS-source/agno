@@ -38,15 +38,15 @@ class WhatsAppTools(Toolkit):
         phone_number_id: Optional[str] = None,
         version: Optional[str] = None,
         recipient_waid: Optional[str] = None,
-        # Enable/disable flags
-        enable_send_text_message: bool = True,
-        enable_send_template_message: bool = True,
-        enable_send_reply_buttons: bool = False,
-        enable_send_list_message: bool = False,
-        enable_send_image: bool = False,
-        enable_send_document: bool = False,
-        enable_send_location: bool = False,
-        enable_send_reaction: bool = False,
+        # Tool enable/disable flags
+        send_text_message: bool = True,
+        send_template_message: bool = True,
+        send_reply_buttons: bool = False,
+        send_list_message: bool = False,
+        send_image: bool = False,
+        send_document: bool = False,
+        send_location: bool = False,
+        send_reaction: bool = False,
         all: bool = False,
         timeout: int = 30,
         **kwargs,
@@ -68,21 +68,21 @@ class WhatsAppTools(Toolkit):
 
         # Register only enabled tools to keep the agent's tool list focused
         tools: List[Any] = []
-        if enable_send_text_message or all:
+        if all or send_text_message:
             tools.append(self.send_text_message)
-        if enable_send_template_message or all:
+        if all or send_template_message:
             tools.append(self.send_template_message)
-        if enable_send_reply_buttons or all:
+        if all or send_reply_buttons:
             tools.append(self.send_reply_buttons)
-        if enable_send_list_message or all:
+        if all or send_list_message:
             tools.append(self.send_list_message)
-        if enable_send_image or all:
+        if all or send_image:
             tools.append(self.send_image)
-        if enable_send_document or all:
+        if all or send_document:
             tools.append(self.send_document)
-        if enable_send_location or all:
+        if all or send_location:
             tools.append(self.send_location)
-        if enable_send_reaction or all:
+        if all or send_reaction:
             tools.append(self.send_reaction)
 
         super().__init__(name="whatsapp", tools=tools, timeout=timeout, **kwargs)

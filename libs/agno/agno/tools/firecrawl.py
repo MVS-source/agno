@@ -28,10 +28,10 @@ class FirecrawlTools(Toolkit):
 
     Args:
         api_key (Optional[str]): The API key to use for the Firecrawl app.
-        enable_scrape (bool): Enable website scraping functionality. Default is True.
-        enable_crawl (bool): Enable website crawling functionality. Default is False.
-        enable_mapping (bool): Enable website mapping functionality. Default is False.
-        enable_search (bool): Enable web search functionality. Default is False.
+        scrape (bool): Enable website scraping functionality. Default is True.
+        crawl (bool): Enable website crawling functionality. Default is False.
+        mapping (bool): Enable website mapping functionality. Default is False.
+        search (bool): Enable web search functionality. Default is False.
         all (bool): Enable all tools. Overrides individual flags when True. Default is False.
         formats (Optional[List[str]]): The formats to use for the Firecrawl app.
         limit (int): The maximum number of pages to crawl.
@@ -43,10 +43,10 @@ class FirecrawlTools(Toolkit):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        enable_scrape: bool = True,
-        enable_crawl: bool = False,
-        enable_mapping: bool = False,
-        enable_search: bool = False,
+        scrape: bool = True,
+        crawl: bool = False,
+        mapping: bool = False,
+        search: bool = False,
         all: bool = False,
         formats: Optional[List[str]] = None,
         limit: int = 10,
@@ -66,13 +66,13 @@ class FirecrawlTools(Toolkit):
         self.search_params = search_params
 
         tools: List[Any] = []
-        if all or enable_scrape:
+        if all or scrape:
             tools.append(self.scrape_website)
-        if all or enable_crawl:
+        if all or crawl:
             tools.append(self.crawl_website)
-        if all or enable_mapping:
+        if all or mapping:
             tools.append(self.map_website)
-        if all or enable_search:
+        if all or search:
             tools.append(self.search_web)
 
         super().__init__(name="firecrawl_tools", tools=tools, **kwargs)

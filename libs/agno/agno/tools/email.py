@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 
 from agno.tools import Toolkit
@@ -11,8 +12,7 @@ class EmailTools(Toolkit):
         sender_name: Optional[str] = None,
         sender_email: Optional[str] = None,
         sender_passkey: Optional[str] = None,
-        enable_email_user: bool = True,
-        all: bool = False,
+        email_user: bool = True,
         **kwargs,
     ):
         self.receiver_email: Optional[str] = receiver_email
@@ -21,7 +21,7 @@ class EmailTools(Toolkit):
         self.sender_passkey: Optional[str] = sender_passkey
 
         tools = []
-        if all or enable_email_user:
+        if email_user:
             tools.append(self.email_user)
 
         # Call superclass with tools list
@@ -42,13 +42,13 @@ class EmailTools(Toolkit):
             raise
 
         if not self.receiver_email:
-            return "error: No receiver email provided"
+            return json.dumps({"error": "No receiver email provided"})
         if not self.sender_name:
-            return "error: No sender name provided"
+            return json.dumps({"error": "No sender name provided"})
         if not self.sender_email:
-            return "error: No sender email provided"
+            return json.dumps({"error": "No sender email provided"})
         if not self.sender_passkey:
-            return "error: No sender passkey provided"
+            return json.dumps({"error": "No sender passkey provided"})
 
         msg = EmailMessage()
         msg["Subject"] = subject
@@ -63,5 +63,5 @@ class EmailTools(Toolkit):
                 smtp.send_message(msg)
         except Exception as e:
             logger.exception("Error sending email")
-            return f"error: {e}"
-        return "email sent successfully"
+            return json.dumps({"error": str(e)})
+        return json.dumps({"status": "email sent successfully"})

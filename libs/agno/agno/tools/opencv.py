@@ -21,17 +21,16 @@ class OpenCVTools(Toolkit):
     def __init__(
         self,
         show_preview=False,
-        enable_capture_image: bool = True,
-        enable_capture_video: bool = True,
-        all: bool = False,
+        capture_image: bool = True,
+        capture_video: bool = True,
         **kwargs,
     ):
         self.show_preview = show_preview
 
         tools: List[Callable] = []
-        if all or enable_capture_image:
+        if capture_image:
             tools.append(self.capture_image)
-        if all or enable_capture_video:
+        if capture_video:
             tools.append(self.capture_video)
 
         super().__init__(

@@ -21,8 +21,7 @@ class EvmTools(Toolkit):
         self,
         private_key: Optional[str] = None,
         rpc_url: Optional[str] = None,
-        enable_send_transaction: bool = True,
-        all: bool = False,
+        send_transaction: bool = True,
         **kwargs,
     ):
         """Initialize EVM tools for blockchain interactions.
@@ -53,7 +52,7 @@ class EvmTools(Toolkit):
         log_debug(f"Your wallet address is: {self.account.address}")
 
         tools = []
-        if all or enable_send_transaction:
+        if send_transaction:
             tools.append(self.send_transaction)
 
         super().__init__(name="evm_tools", tools=tools, **kwargs)

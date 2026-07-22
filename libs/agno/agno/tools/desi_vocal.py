@@ -1,3 +1,4 @@
+import json
 from os import getenv
 from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
@@ -17,9 +18,8 @@ class DesiVocalTools(Toolkit):
         self,
         api_key: Optional[str] = None,
         voice_id: Optional[str] = "f27d74e5-ea71-4697-be3e-f04bbd80c1a8",
-        enable_get_voices: bool = True,
-        enable_text_to_speech: bool = True,
-        all: bool = False,
+        get_voices: bool = True,
+        text_to_speech: bool = True,
         timeout: int = 30,
         **kwargs,
     ):
@@ -30,9 +30,9 @@ class DesiVocalTools(Toolkit):
         self.voice_id = voice_id
 
         tools: List[Any] = []
-        if all or enable_get_voices:
+        if get_voices:
             tools.append(self.get_voices)
-        if all or enable_text_to_speech:
+        if text_to_speech:
             tools.append(self.text_to_speech)
 
         super().__init__(name="desi_vocal_tools", tools=tools, timeout=timeout, **kwargs)
@@ -65,10 +65,10 @@ class DesiVocalTools(Toolkit):
                     }
                 )
 
-            return str(responses)
+            return json.dumps(responses)
         except Exception as e:
             logger.exception("Failed to get voices")
-            return f"Error: {e}"
+            return json.dumps({"error": str(e)})
 
     def text_to_speech(self, agent: Union[Agent, Team], prompt: str, voice_id: Optional[str] = None) -> ToolResult:
         """

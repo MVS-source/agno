@@ -211,7 +211,9 @@ class TodoistTools(Toolkit):
     def get_projects(self) -> str:
         """Get all projects."""
         try:
-            projects = self.api.get_projects()
+            # get_projects returns Iterator[list[Project]], flatten to list
+            projects_response = self.api.get_projects()
+            projects = list(projects_response)[0]
             return json.dumps([project.__dict__ for project in projects])
         except Exception as e:
             logger.exception("Failed to get projects")

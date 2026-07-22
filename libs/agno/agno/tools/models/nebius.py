@@ -22,8 +22,7 @@ class NebiusTools(Toolkit):
         image_quality: Optional[str] = "standard",
         image_size: Optional[str] = "1024x1024",
         image_style: Optional[str] = None,
-        enable_generate_image: bool = True,
-        all: bool = False,
+        generate_image: bool = True,
         **kwargs,
     ):
         """Initialize Nebius Token Factory text-to-image tools.
@@ -38,12 +37,11 @@ class NebiusTools(Toolkit):
             image_quality: Image quality. Options: "standard", "hd".
             image_size: Image size in format "WIDTHxHEIGHT". Max supported: 2000x2000.
             image_style: Optional style preset to apply.
-            enable_generate_image: Enable image generation functionality.
-            all: Enable all functions.
+            generate_image: Enable image generation functionality.
             **kwargs: Additional arguments to pass to Toolkit.
         """
         tools = []
-        if all or enable_generate_image:
+        if generate_image:
             tools.append(self.generate_image)
 
         super().__init__(name="nebius_tools", tools=tools, **kwargs)

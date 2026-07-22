@@ -25,15 +25,15 @@ class OpenAITools(Toolkit):
 
     Args:
         api_key (str, optional): OpenAI API key. Retrieved from OPENAI_API_KEY env variable if not provided.
-        enable_transcription (bool): Enable audio transcription functionality. Default is True.
-        enable_image_generation (bool): Enable image generation functionality. Default is True.
-        enable_speech_generation (bool): Enable speech generation functionality. Default is True.
-        all (bool): Enable all tools. Overrides individual flags when True. Default is False.
-        transcription_model (str): Model to use for transcription. Default is "whisper-1".
-        text_to_speech_voice (OpenAIVoice): Voice to use for TTS. Default is "alloy".
-        text_to_speech_model (OpenAITTSModel): Model to use for TTS. Default is "tts-1".
-        text_to_speech_format (OpenAITTSFormat): Audio format for TTS. Default is "mp3".
-        image_model (str, optional): Model to use for image generation. Default is "dall-e-3".
+        transcription (bool): Whether to register the transcribe_audio tool.
+        image_generation (bool): Whether to register the generate_image tool.
+        speech_generation (bool): Whether to register the generate_speech tool.
+        all (bool): Whether to register all tools.
+        transcription_model (str): Model to use for transcription.
+        text_to_speech_voice (OpenAIVoice): Voice to use for TTS.
+        text_to_speech_model (OpenAITTSModel): Model to use for TTS.
+        text_to_speech_format (OpenAITTSFormat): Audio format for TTS.
+        image_model (str, optional): Model to use for image generation.
         image_quality (str, optional): Quality setting for image generation.
         image_size (str, optional): Size setting for image generation.
         image_style (str, optional): Style setting for image generation.
@@ -42,9 +42,9 @@ class OpenAITools(Toolkit):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        enable_transcription: bool = True,
-        enable_image_generation: bool = True,
-        enable_speech_generation: bool = True,
+        transcription: bool = True,
+        image_generation: bool = True,
+        speech_generation: bool = True,
         all: bool = False,
         transcription_model: str = "whisper-1",
         text_to_speech_voice: OpenAIVoice = "alloy",
@@ -71,11 +71,11 @@ class OpenAITools(Toolkit):
         self.image_size = image_size
 
         tools: List[Any] = []
-        if all or enable_transcription:
+        if all or transcription:
             tools.append(self.transcribe_audio)
-        if all or enable_image_generation:
+        if all or image_generation:
             tools.append(self.generate_image)
-        if all or enable_speech_generation:
+        if all or speech_generation:
             tools.append(self.generate_speech)
 
         super().__init__(name="openai_tools", tools=tools, **kwargs)

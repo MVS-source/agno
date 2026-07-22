@@ -37,6 +37,7 @@ class GoogleMapTools(Toolkit):
         get_distance_matrix: bool = True,
         get_elevation: bool = True,
         get_timezone: bool = True,
+        all: bool = False,
         **kwargs,
     ):
         self.api_key = key or getenv("GOOGLE_MAPS_API_KEY")
@@ -47,21 +48,21 @@ class GoogleMapTools(Toolkit):
         self.places_client = places_v1.PlacesClient()
 
         tools: List[Any] = []
-        if search_places:
+        if all or search_places:
             tools.append(self.search_places)
-        if get_directions:
+        if all or get_directions:
             tools.append(self.get_directions)
-        if validate_address:
+        if all or validate_address:
             tools.append(self.validate_address)
-        if geocode_address:
+        if all or geocode_address:
             tools.append(self.geocode_address)
-        if reverse_geocode:
+        if all or reverse_geocode:
             tools.append(self.reverse_geocode)
-        if get_distance_matrix:
+        if all or get_distance_matrix:
             tools.append(self.get_distance_matrix)
-        if get_elevation:
+        if all or get_elevation:
             tools.append(self.get_elevation)
-        if get_timezone:
+        if all or get_timezone:
             tools.append(self.get_timezone)
 
         super().__init__(name="google_maps", tools=tools, **kwargs)
@@ -102,8 +103,7 @@ class GoogleMapTools(Toolkit):
             return json.dumps(places)
 
         except Exception as e:
-            print(f"Error searching Google Maps: {str(e)}")
-            return str([])
+            return json.dumps({"error": f"Error searching Google Maps: {e}"})
 
     def get_directions(
         self,
@@ -130,8 +130,7 @@ class GoogleMapTools(Toolkit):
             result = self.client.directions(origin, destination, mode=mode, departure_time=departure_time, avoid=avoid)
             return str(result)
         except Exception as e:
-            print(f"Error getting directions: {str(e)}")
-            return str([])
+            return json.dumps({"error": f"Error getting directions: {e}"})
 
     def validate_address(
         self, address: str, region_code: str = "US", locality: Optional[str] = None, enable_usps_cass: bool = False
@@ -154,8 +153,7 @@ class GoogleMapTools(Toolkit):
             )
             return str(result)
         except Exception as e:
-            print(f"Error validating address: {str(e)}")
-            return str({})
+            return json.dumps({"error": f"Error validating address: {e}"})
 
     def geocode_address(self, address: str, region: Optional[str] = None) -> str:
         """
@@ -172,8 +170,7 @@ class GoogleMapTools(Toolkit):
             result = self.client.geocode(address, region=region)
             return str(result)
         except Exception as e:
-            print(f"Error geocoding address: {str(e)}")
-            return str([])
+            return json.dumps({"error": f"Error geocoding address: {e}"})
 
     def reverse_geocode(
         self, lat: float, lng: float, result_type: Optional[List[str]] = None, location_type: Optional[List[str]] = None
@@ -194,8 +191,7 @@ class GoogleMapTools(Toolkit):
             result = self.client.reverse_geocode((lat, lng), result_type=result_type, location_type=location_type)
             return str(result)
         except Exception as e:
-            print(f"Error reverse geocoding: {str(e)}")
-            return str([])
+            return json.dumps({"error": f"Error reverse geocoding: {e}"})
 
     def get_distance_matrix(
         self,
@@ -224,8 +220,7 @@ class GoogleMapTools(Toolkit):
             )
             return str(result)
         except Exception as e:
-            print(f"Error getting distance matrix: {str(e)}")
-            return str({})
+            return json.dumps({"error": f"Error getting distance matrix: {e}"})
 
     def get_elevation(self, lat: float, lng: float) -> str:
         """
@@ -242,8 +237,7 @@ class GoogleMapTools(Toolkit):
             result = self.client.elevation((lat, lng))
             return str(result)
         except Exception as e:
-            print(f"Error getting elevation: {str(e)}")
-            return str([])
+            return json.dumps({"error": f"Error getting elevation: {e}"})
 
     def get_timezone(self, lat: float, lng: float, timestamp: Optional[datetime] = None) -> str:
         """
@@ -264,5 +258,4 @@ class GoogleMapTools(Toolkit):
             result = self.client.timezone(location=(lat, lng), timestamp=timestamp)
             return str(result)
         except Exception as e:
-            print(f"Error getting timezone: {str(e)}")
-            return str({})
+            return json.dumps({"error": f"Error getting timezone: {e}"})

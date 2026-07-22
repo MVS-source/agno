@@ -14,8 +14,7 @@ class PubmedTools(Toolkit):
         email: str = "your_email@example.com",
         max_results: Optional[int] = None,
         results_expanded: bool = False,
-        enable_search_pubmed: bool = True,
-        all: bool = False,
+        search_pubmed: bool = True,
         **kwargs,
     ):
         self.max_results: Optional[int] = max_results
@@ -23,7 +22,7 @@ class PubmedTools(Toolkit):
         self.results_expanded: bool = results_expanded
 
         tools: List[Any] = []
-        if enable_search_pubmed or all:
+        if search_pubmed:
             tools.append(self.search_pubmed)
 
         super().__init__(name="pubmed", tools=tools, **kwargs)
@@ -185,4 +184,4 @@ class PubmedTools(Toolkit):
 
             return json.dumps(results)
         except Exception as e:
-            return f"Could not fetch articles. Error: {e}"
+            return json.dumps({"error": f"Could not fetch articles: {e}"})
