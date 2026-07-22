@@ -55,12 +55,7 @@ def execute_pre_hooks(
     is_continue: bool = False,
     **kwargs: Any,
 ) -> Iterator[RunOutputEvent]:
-    """Execute multiple pre-hook functions in succession.
-
-    Args:
-        is_continue: If True, this is a continue_run() call. Only hooks decorated with
-                    @hook(run_on_continue=True) will execute.
-    """
+    """Execute multiple pre-hook functions in succession."""
     from agno.agent._init import set_debug
 
     if hooks is None:
@@ -73,6 +68,7 @@ def execute_pre_hooks(
         hooks = [h for h in hooks if should_run_on_continue(h) or is_guardrail_hook(h)]
         if not hooks:
             return
+
     # Prepare arguments for this hook
     all_args = {
         "run_input": run_input,
@@ -180,12 +176,7 @@ async def aexecute_pre_hooks(
     is_continue: bool = False,
     **kwargs: Any,
 ) -> AsyncIterator[RunOutputEvent]:
-    """Execute multiple pre-hook functions in succession (async version).
-
-    Args:
-        is_continue: If True, this is a continue_run() call. Only hooks decorated with
-                    @hook(run_on_continue=True) will execute.
-    """
+    """Execute multiple pre-hook functions in succession (async version)."""
     from agno.agent._init import set_debug
 
     if hooks is None:
@@ -198,6 +189,7 @@ async def aexecute_pre_hooks(
         hooks = [h for h in hooks if should_run_on_continue(h) or is_guardrail_hook(h)]
         if not hooks:
             return
+
     # Prepare arguments for this hook
     all_args = {
         "run_input": run_input,
