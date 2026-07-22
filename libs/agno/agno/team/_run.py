@@ -6765,9 +6765,6 @@ def continue_run_dispatch(
             run_context=run_context,
         )
 
-        # Handle tool call updates (execute confirmed tools, etc.)
-        _handle_team_tool_call_updates(team, run_response=run_response, run_messages=run_messages, tools=_tools)
-
         # Reset run state for continuation
         run_response.status = RunStatus.running
         # Reset content before re-running the model; _update_run_response appends
@@ -6988,8 +6985,6 @@ def _continue_run_dispatch_stream_with_member_events(
             run_context=run_context,
         )
 
-        _handle_team_tool_call_updates(team, run_response=run_response, run_messages=run_messages, tools=_tools)
-
         run_response.status = RunStatus.running
         run_response.content = None
 
@@ -7083,14 +7078,15 @@ def _continue_run(
     """Continue a paused team run (sync, non-streaming).
 
     Steps:
-    1. Generate response from model (includes running tool calls)
-    2. Update TeamRunOutput with model response
-    3. Check for new pauses
-    4. Convert response to structured format
-    5. Create session summary
-    6. Cleanup and store
+    1. Execute pre-hooks
+    2. Generate response from model (includes running tool calls)
+    3. Update TeamRunOutput with model response
+    4. Check for new pauses
+    5. Convert response to structured format
+    6. Create session summary
+    7. Cleanup and store
     """
-    from agno.team._hooks import _execute_post_hooks
+    from agno.team._hooks import _execute_post_hooks, _execute_pre_hooks
     from agno.team._init import _disconnect_connectable_tools
     from agno.team._response import (
         _convert_response_to_structured_format,
@@ -7118,6 +7114,28 @@ def _continue_run(
         for attempt in range(num_attempts):
             try:
                 raise_if_cancelled(run_response.run_id)  # type: ignore
+
+                # Execute pre-hooks BEFORE any side effects (tool execution)
+                # Pass is_continue=True so hooks can distinguish run vs continue
+                run_input = cast(TeamRunInput, run_response.input)
+                if team.pre_hooks is not None:
+                    pre_hook_iterator = _execute_pre_hooks(
+                        team,
+                        hooks=team.pre_hooks,  # type: ignore
+                        run_response=run_response,
+                        run_input=run_input,
+                        run_context=run_context,
+                        session=session,
+                        user_id=user_id,
+                        debug_mode=debug_mode,
+                        background_tasks=background_tasks,
+                        is_continue=True,
+                        **kwargs,
+                    )
+                    deque(pre_hook_iterator, maxlen=0)
+
+                # Handle the updated tools (execute confirmed HITL tools)
+                _handle_team_tool_call_updates(team, run_response=run_response, run_messages=run_messages, tools=tools)
 
                 # Generate model response
                 model_response: ModelResponse = call_model_with_fallback(
@@ -7279,7 +7297,7 @@ def _continue_run_stream(
     **kwargs: Any,
 ) -> Iterator[Union[TeamRunOutputEvent, RunOutputEvent, TeamRunOutput]]:
     """Continue a paused team run (sync, streaming)."""
-    from agno.team._hooks import _execute_post_hooks
+    from agno.team._hooks import _execute_post_hooks, _execute_pre_hooks
     from agno.team._init import _disconnect_connectable_tools
     from agno.team._response import (
         _handle_model_response_stream,
@@ -7305,6 +7323,27 @@ def _continue_run_stream(
                     )
 
                 raise_if_cancelled(run_response.run_id)  # type: ignore
+
+                # Execute pre-hooks BEFORE any side effects (tool execution)
+                # Pass is_continue=True so hooks can distinguish run vs continue
+                run_input = cast(TeamRunInput, run_response.input)
+                if team.pre_hooks is not None:
+                    pre_hook_iterator = _execute_pre_hooks(
+                        team,
+                        hooks=team.pre_hooks,  # type: ignore
+                        run_response=run_response,
+                        run_input=run_input,
+                        run_context=run_context,
+                        session=session,
+                        user_id=user_id,
+                        debug_mode=debug_mode,
+                        stream_events=stream_events,
+                        background_tasks=background_tasks,
+                        is_continue=True,
+                        **kwargs,
+                    )
+                    for event in pre_hook_iterator:
+                        yield event
 
                 # Handle the updated tools (execute confirmed tools, etc.) with streaming
                 yield from _handle_team_tool_call_updates_stream(
@@ -7893,7 +7932,7 @@ async def _acontinue_run(
     **kwargs: Any,
 ) -> TeamRunOutput:
     """Continue a paused team run (async, non-streaming)."""
-    from agno.team._hooks import _aexecute_post_hooks
+    from agno.team._hooks import _aexecute_post_hooks, _aexecute_pre_hooks
     from agno.team._init import _disconnect_connectable_tools, _disconnect_mcp_tools
     from agno.team._telemetry import alog_team_telemetry
     from agno.team._tools import _aget_learning_tools, _check_and_refresh_mcp_tools, _determine_tools_for_model
@@ -8044,6 +8083,28 @@ async def _acontinue_run(
                     events_to_skip=team.events_to_skip,
                     store_events=team.store_events,
                 )
+
+                # Execute pre-hooks (consistent with run(): hooks fire before member
+                # runs resume and before the team model loop)
+                # Pass is_continue=True so hooks can distinguish run vs continue
+                run_input = cast(TeamRunInput, run_response.input)
+                if team.pre_hooks is not None:
+                    pre_hook_iterator = _aexecute_pre_hooks(
+                        team,
+                        hooks=team.pre_hooks,  # type: ignore
+                        run_response=run_response,
+                        run_input=run_input,
+                        run_context=run_context,
+                        session=team_session,
+                        user_id=user_id,
+                        debug_mode=debug_mode,
+                        background_tasks=background_tasks,
+                        is_continue=True,
+                        **kwargs,
+                    )
+                    # Consume the async iterator without yielding
+                    async for _ in pre_hook_iterator:
+                        pass
 
                 has_member = _has_member_requirements(run_response.requirements or [])
                 has_team_level = _has_team_level_requirements(run_response.requirements or [])
@@ -8324,7 +8385,7 @@ async def _acontinue_run_stream(
     **kwargs: Any,
 ) -> AsyncIterator[Union[TeamRunOutputEvent, RunOutputEvent, TeamRunOutput]]:
     """Continue a paused team run (async, streaming)."""
-    from agno.team._hooks import _aexecute_post_hooks
+    from agno.team._hooks import _aexecute_post_hooks, _aexecute_pre_hooks
     from agno.team._init import _disconnect_connectable_tools, _disconnect_mcp_tools
     from agno.team._response import (
         _ahandle_model_response_stream,
@@ -8574,6 +8635,27 @@ async def _acontinue_run_stream(
                             events_to_skip=team.events_to_skip,
                             store_events=team.store_events,
                         )
+
+                    # Execute pre-hooks BEFORE any side effects (tool execution)
+                    # Pass is_continue=True so hooks can distinguish run vs continue
+                    run_input = cast(TeamRunInput, run_response.input)
+                    if team.pre_hooks is not None:
+                        pre_hook_iterator = _aexecute_pre_hooks(
+                            team,
+                            hooks=team.pre_hooks,  # type: ignore
+                            run_response=run_response,
+                            run_input=run_input,
+                            run_context=run_context,
+                            session=team_session,
+                            user_id=user_id,
+                            debug_mode=debug_mode,
+                            stream_events=stream_events,
+                            background_tasks=background_tasks,
+                            is_continue=True,
+                            **kwargs,
+                        )
+                        async for event in pre_hook_iterator:
+                            yield event
 
                     # Handle the updated tools (execute confirmed tools, etc.) with streaming
                     async for event in _ahandle_team_tool_call_updates_stream(
