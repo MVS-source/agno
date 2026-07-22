@@ -8533,6 +8533,27 @@ async def _acontinue_run_stream(
 
                 await aregister_run(run_response.run_id)  # type: ignore
 
+                # Execute pre-hooks BEFORE any side effects (member routing, tool execution)
+                # This must happen before member routing so guardrails can block the entire continue
+                run_input = cast(TeamRunInput, run_response.input)
+                if team.pre_hooks is not None:
+                    pre_hook_iterator = _aexecute_pre_hooks(
+                        team,
+                        hooks=team.pre_hooks,  # type: ignore
+                        run_response=run_response,
+                        run_input=run_input,
+                        run_context=run_context,
+                        session=team_session,
+                        user_id=user_id,
+                        debug_mode=debug_mode,
+                        stream_events=stream_events,
+                        background_tasks=background_tasks,
+                        is_continue=True,
+                        **kwargs,
+                    )
+                    async for event in pre_hook_iterator:
+                        yield event
+
                 has_member = _has_member_requirements(run_response.requirements or [])
                 has_team_level = _has_team_level_requirements(run_response.requirements or [])
 
@@ -8635,27 +8656,6 @@ async def _acontinue_run_stream(
                             events_to_skip=team.events_to_skip,
                             store_events=team.store_events,
                         )
-
-                    # Execute pre-hooks BEFORE any side effects (tool execution)
-                    # Pass is_continue=True so hooks can distinguish run vs continue
-                    run_input = cast(TeamRunInput, run_response.input)
-                    if team.pre_hooks is not None:
-                        pre_hook_iterator = _aexecute_pre_hooks(
-                            team,
-                            hooks=team.pre_hooks,  # type: ignore
-                            run_response=run_response,
-                            run_input=run_input,
-                            run_context=run_context,
-                            session=team_session,
-                            user_id=user_id,
-                            debug_mode=debug_mode,
-                            stream_events=stream_events,
-                            background_tasks=background_tasks,
-                            is_continue=True,
-                            **kwargs,
-                        )
-                        async for event in pre_hook_iterator:
-                            yield event
 
                     # Handle the updated tools (execute confirmed tools, etc.) with streaming
                     async for event in _ahandle_team_tool_call_updates_stream(
