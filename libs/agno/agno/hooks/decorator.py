@@ -76,27 +76,32 @@ def hook(*args, **kwargs) -> Union[F, Callable[[F], F]]:
     Examples:
         @hook
         def my_hook(run_output, agent):
-            # Runs on run(), skipped on continue_run()
+            # This runs normally (blocking)
             process_output(run_output.content)
 
-        @hook(run_on_continue=True)
-        def security_hook(run_input, agent):
-            # Runs on BOTH run() and continue_run()
-            validate_permissions(run_input)
+        @hook()
+        def another_hook(run_output, agent):
+            # Same as above - runs normally
+            process_output(run_output.content)
 
         @hook(run_in_background=True)
         def my_background_hook(run_output, agent):
-            # Runs in background, skipped on continue_run()
+            # This will run in the background when background_tasks is available
             send_notification(run_output.content)
 
-        @hook(run_in_background=True, run_on_continue=True)
-        def audit_hook(run_input, agent):
-            # Runs in background on BOTH run() and continue_run()
-            log_to_audit_system(run_input)
+        @hook(run_in_background=True)
+        async def my_async_background_hook(run_output, agent):
+            # Async hooks also supported
+            await send_async_notification(run_output.content)
+
+        @hook(run_on_continue=True)
+        def security_hook(run_input, agent):
+            # This hook runs on BOTH run() and continue_run()
+            validate_permissions(run_input)
 
         agent = Agent(
             model=OpenAIChat(id="gpt-5.5"),
-            pre_hooks=[security_hook, my_hook],
+            post_hooks=[my_hook, my_background_hook],
         )
     """
     # Valid kwargs for the hook decorator
