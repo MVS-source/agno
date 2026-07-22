@@ -1,8 +1,8 @@
 """Tests for pre-hook execution on Agent continue_run paths.
 
-Regression coverage for the gap where run()/arun() execute pre_hooks but
-continue_run()/acontinue_run() (and their streaming variants) used to skip
-them — allowing HITL-resumed runs to bypass guardrail/authz hooks.
+Pre-hooks are opt-in on continue_run — by default they skip since the input was
+already validated on the initial run(). Hooks that need to run on continue_run
+must be decorated with @hook(run_on_continue=True).
 """
 
 import asyncio
@@ -15,6 +15,7 @@ import agno.agent._tools as agent_tools
 from agno.agent import _run as agent_run
 from agno.agent.agent import Agent
 from agno.exceptions import InputCheckError
+from agno.hooks import hook
 from agno.models.message import Message
 from agno.models.response import ModelResponse
 from agno.run import RunContext, RunStatus
@@ -75,6 +76,7 @@ async def _empty_async_generator(*args, **kwargs):
 def test_continue_run_executes_pre_hooks(monkeypatch):
     calls = []
 
+    @hook(run_on_continue=True)
     def pre_hook(run_input=None, session=None, user_id=None):
         calls.append({"session_id": getattr(session, "session_id", None), "user_id": user_id})
 
@@ -101,6 +103,7 @@ def test_continue_run_pre_hook_guardrail_blocks_model_call(monkeypatch):
     """A guardrail raising InputCheckError in a pre-hook must prevent the model
     loop on continue_run, with the same error behavior as run()."""
 
+    @hook(run_on_continue=True)
     def blocking_hook(run_input=None):
         raise InputCheckError("authz denied on resume")
 
@@ -132,6 +135,7 @@ def test_continue_run_pre_hook_guardrail_blocks_model_call(monkeypatch):
 def test_continue_run_stream_executes_pre_hooks(monkeypatch):
     calls = []
 
+    @hook(run_on_continue=True)
     def pre_hook(run_input=None, session=None, user_id=None):
         calls.append(getattr(session, "session_id", None))
 
@@ -158,6 +162,7 @@ def test_continue_run_stream_executes_pre_hooks(monkeypatch):
 
 
 def test_continue_run_stream_pre_hook_guardrail_blocks_model_stream(monkeypatch):
+    @hook(run_on_continue=True)
     def blocking_hook(run_input=None):
         raise InputCheckError("authz denied on resume")
 
@@ -224,6 +229,7 @@ def test_acontinue_run_executes_pre_hooks(monkeypatch):
     async def main():
         calls = []
 
+        @hook(run_on_continue=True)
         async def pre_hook(run_input=None, session=None):
             calls.append(getattr(session, "session_id", None))
 
@@ -249,6 +255,7 @@ def test_acontinue_run_executes_pre_hooks(monkeypatch):
 
 def test_acontinue_run_pre_hook_guardrail_blocks_model_call(monkeypatch):
     async def main():
+        @hook(run_on_continue=True)
         def blocking_hook(run_input=None):
             raise InputCheckError("authz denied on resume")
 
@@ -281,6 +288,7 @@ def test_acontinue_run_stream_executes_pre_hooks(monkeypatch):
     async def main():
         calls = []
 
+        @hook(run_on_continue=True)
         async def pre_hook(run_input=None, session=None):
             calls.append(getattr(session, "session_id", None))
 
@@ -326,6 +334,7 @@ def test_continue_run_background_mode_queues_non_guardrail_hooks(monkeypatch):
     inline) on continue_run — they must not silently vanish."""
     executed = []
 
+    @hook(run_on_continue=True)
     def audit_hook(run_input=None, session=None):
         executed.append(1)
 
@@ -432,6 +441,7 @@ def test_continue_run_stream_emits_pre_hook_events(monkeypatch):
     events as run()."""
     calls = []
 
+    @hook(run_on_continue=True)
     def pre_hook(run_input=None, session=None):
         calls.append(1)
 
@@ -459,3 +469,64 @@ def test_continue_run_stream_emits_pre_hook_events(monkeypatch):
     event_names = [type(e).__name__ for e in events]
     assert any(name.startswith("PreHookStarted") for name in event_names), event_names
     assert any(name.startswith("PreHookCompleted") for name in event_names), event_names
+
+
+# ---------------------------------------------------------------------------
+# execute_pre_hooks flag on RunRequirement
+# ---------------------------------------------------------------------------
+
+
+def test_continue_run_skips_pre_hooks_by_default(monkeypatch):
+    """Hooks without @hook(run_on_continue=True) are skipped on continue_run."""
+    calls = []
+
+    def pre_hook(run_input=None, session=None):
+        calls.append(1)
+
+    agent = Agent(name="default-skip-hook-agent", pre_hooks=[pre_hook])
+    _patch_sync_model(monkeypatch)
+    monkeypatch.setattr(agent_run, "cleanup_and_store", lambda *a, **k: None)
+    monkeypatch.setattr(agent_telemetry, "log_agent_telemetry", lambda *a, **k: None)
+
+    result = agent_run._continue_run(
+        agent,
+        run_response=_make_paused_run(),
+        run_messages=_make_run_messages(),
+        run_context=_make_run_context(),
+        session=_make_session(),
+        tools=[],
+        user_id="user-1",
+    )
+
+    assert result.status == RunStatus.completed
+    assert calls == [], "pre-hooks should be skipped by default on continue_run"
+
+
+def test_continue_run_runs_pre_hooks_when_decorated(monkeypatch):
+    """Pre-hooks decorated with @hook(run_on_continue=True) run on continue_run."""
+    calls = []
+
+    @hook(run_on_continue=True)
+    def opt_in_hook(run_input=None, session=None):
+        calls.append("opt_in")
+
+    def regular_hook(run_input=None, session=None):
+        calls.append("regular")
+
+    agent = Agent(name="mixed-hooks-agent", pre_hooks=[opt_in_hook, regular_hook])
+    _patch_sync_model(monkeypatch)
+    monkeypatch.setattr(agent_run, "cleanup_and_store", lambda *a, **k: None)
+    monkeypatch.setattr(agent_telemetry, "log_agent_telemetry", lambda *a, **k: None)
+
+    result = agent_run._continue_run(
+        agent,
+        run_response=_make_paused_run(),
+        run_messages=_make_run_messages(),
+        run_context=_make_run_context(),
+        session=_make_session(),
+        tools=[],
+        user_id="user-1",
+    )
+
+    assert result.status == RunStatus.completed
+    assert calls == ["opt_in"], "only hooks with @hook(run_on_continue=True) should run"

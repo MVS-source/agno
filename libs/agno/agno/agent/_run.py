@@ -3624,34 +3624,45 @@ def _continue_run(
 
     agent.model = cast(Model, agent.model)
 
+    # 1. Execute pre-hooks (only hooks with @hook(run_on_continue=True) will run)
+    run_input = cast(RunInput, run_response.input)
+    if agent.pre_hooks is not None:
+        try:
+            pre_hook_iterator = execute_pre_hooks(
+                agent,
+                hooks=agent.pre_hooks,  # type: ignore
+                run_response=run_response,
+                run_input=run_input,
+                run_context=run_context,
+                session=session,
+                user_id=user_id,
+                debug_mode=debug_mode,
+                background_tasks=background_tasks,
+                is_continue=True,
+                **kwargs,
+            )
+            deque(pre_hook_iterator, maxlen=0)
+        except InputCheckError as e:
+            run_response = cast(RunOutput, run_response)
+            run_response.status = RunStatus.error
+            flush_in_flight_messages_on_error(run_response, locals().get("run_messages"))
+            if run_response.content is None:
+                run_response.content = str(e)
+            log_error(f"Validation failed: {str(e)} | Check trigger: {e.check_trigger}")
+            cleanup_and_store(
+                agent, run_response=run_response, session=session, run_context=run_context, user_id=user_id
+            )
+            return run_response
+
+    # 2. Handle the updated tools (executes confirmed HITL tools)
+    handle_tool_call_updates(agent, run_response=run_response, run_messages=run_messages, tools=tools)
+
     try:
         num_attempts = agent.retries + 1
         for attempt in range(num_attempts):
             try:
                 # Check for cancellation before model call
                 raise_if_cancelled(run_response.run_id)  # type: ignore
-
-                # 1. Execute pre-hooks BEFORE any side effects (tool execution)
-                # Pass is_continue=True so hooks can distinguish run vs continue
-                run_input = cast(RunInput, run_response.input)
-                if agent.pre_hooks is not None:
-                    pre_hook_iterator = execute_pre_hooks(
-                        agent,
-                        hooks=agent.pre_hooks,  # type: ignore
-                        run_response=run_response,
-                        run_input=run_input,
-                        run_context=run_context,
-                        session=session,
-                        user_id=user_id,
-                        debug_mode=debug_mode,
-                        background_tasks=background_tasks,
-                        is_continue=True,
-                        **kwargs,
-                    )
-                    deque(pre_hook_iterator, maxlen=0)
-
-                # 2. Handle the updated tools (executes confirmed HITL tools)
-                handle_tool_call_updates(agent, run_response=run_response, run_messages=run_messages, tools=tools)
 
                 # 3. Generate a response from the Model (includes running function calls)
                 agent.model = cast(Model, agent.model)
@@ -3879,8 +3890,7 @@ def _continue_run_stream(
                         store_events=agent.store_events,
                     )
 
-                # 2. Execute pre-hooks BEFORE any side effects (tool execution)
-                # Pass is_continue=True so hooks can distinguish run vs continue
+                # 2. Execute pre-hooks (only hooks with @hook(run_on_continue=True) will run)
                 run_input = cast(RunInput, run_response.input)
                 if agent.pre_hooks is not None:
                     pre_hook_iterator = execute_pre_hooks(
@@ -4768,8 +4778,7 @@ async def _acontinue_run(
                 # Register run for cancellation tracking
                 await aregister_run(run_response.run_id)  # type: ignore
 
-                # 7. Execute pre-hooks BEFORE any side effects (tool execution)
-                # Pass is_continue=True so hooks can distinguish run vs continue
+                # 7. Execute pre-hooks (only hooks with @hook(run_on_continue=True) will run)
                 run_input = cast(RunInput, run_response.input)
                 if agent.pre_hooks is not None:
                     pre_hook_iterator = aexecute_pre_hooks(
@@ -4793,6 +4802,7 @@ async def _acontinue_run(
                 await ahandle_tool_call_updates(
                     agent, run_response=run_response, run_messages=run_messages, tools=_tools
                 )
+
                 # 9. Get model response
                 model_response: ModelResponse = await acall_model_with_fallback(
                     agent.model,
@@ -5289,8 +5299,7 @@ async def _acontinue_run_stream(
                         store_events=agent.store_events,
                     )
 
-                # 7. Execute pre-hooks BEFORE any side effects (tool execution)
-                # Pass is_continue=True so hooks can distinguish run vs continue
+                # 7. Execute pre-hooks (only hooks with @hook(run_on_continue=True) will run)
                 run_input = cast(RunInput, run_response.input)
                 if agent.pre_hooks is not None:
                     pre_hook_iterator = aexecute_pre_hooks(
